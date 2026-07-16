@@ -1,7 +1,7 @@
 import type { NextPage } from "next";
 import Image from "next/image";
-import './fondo.css';
 import Link from 'next/link';
+import './fondo.css';
 
 const Login: NextPage = () => {
   return (
@@ -13,19 +13,6 @@ const Login: NextPage = () => {
     >
       {/* Capa de Cuadrícula: Totalmente independiente, fija en el fondo y no interfiere con los clicks */}
       <div className="fondo-cuadricula absolute inset-0 z-0 pointer-events-none" />
-
-      {/* Contenedor del fondo geométrico oculto (lo mantengo igual por si lo usas luego) */}
-      <div className="w-[1920px] h-[1080px] relative hidden max-w-full shrink-0">
-        <div className="absolute top-[1080px] left-[1920px] background: '#F5F7FA', backgroundImage: 'linear-gradient(49deg, rgba(245, 247, 250, 1) 0%, rgba(58, 117, 148, 1) 100%)' w-full h-full [transform:_rotate(180deg)] [transform-origin:0_0]" />
-        <Image
-          className="absolute top-[0px] left-[0px] w-full h-full"
-          width={1920}
-          height={1080}
-          sizes="100vw"
-          alt=""
-          src="/Fondo-geom.svg"
-        />
-      </div>
 
       {/* Formulario de Login: Ahora con z-10 para posicionarse arriba de la cuadrícula y perfectamente centrado */}
       <form className="m-0 w-full relative z-10 shadow-[0px_7.1px_16.8px_4.42px_rgba(0,_0,_0,_0.25)] rounded-[26.5px] bg-[#f5f7fa] flex flex-col items-start justify-center pt-[29.1px] pb-[29.2px] pl-[35px] pr-9 box-border gap-[23.2px] max-w-[578px] shrink-0 mq578:max-w-full mq630:pt-5 mq630:pb-5 mq630:box-border hover:text-black">
@@ -56,7 +43,7 @@ const Login: NextPage = () => {
           </div>
           <div className="self-stretch h-[51.7px] rounded-[13.5px] bg-[#f9fafb] border-[#e5e7eb] border-solid border-[1.1px] box-border overflow-hidden shrink-0 flex items-start justify-center py-2.5 px-[18px] max-w-full">
             <input
-              className="w-full [border:none] [outline:none] bg-[transparent] h-[27px] flex-1 flex items-center font-['Satoshi_Variable'] text-lg text-[#8a8f96] min-w-[250px] max-w-full"
+              className="w-full [border:none] [outline:none] bg-[transparent] h-[27px] flex-1 flex items-center font-['Satoshi_Variable'] text-lg text-[#000000] min-w-[250px] max-w-full"
               placeholder="comunidadconectada@gmail.com"
               type="text"
             />
@@ -72,7 +59,7 @@ const Login: NextPage = () => {
           <div className="self-stretch h-[51.7px] rounded-[13.5px] bg-[#f9fafb] border-[#e5e7eb] border-solid border-[1.1px] box-border overflow-hidden shrink-0 flex items-start justify-center py-2.5 px-[18px] max-w-full">
             <div className="flex-1 flex items-center flex-wrap content-center gap-0 max-w-full [row-gap:20px]">
               <input
-                className="w-[calc(100%_-_18.9px)] [border:none] [outline:none] bg-[transparent] h-[27px] flex-1 overflow-hidden flex items-start font-['Satoshi_Variable'] text-lg text-[#8a8f96] min-w-[281px] max-w-full"
+                className="w-[calc(100%_-_18.9px)] [border:none] [outline:none] bg-[transparent] h-[27px] flex-1 overflow-hidden flex items-start font-['Satoshi_Variable'] text-lg text-[#000000] min-w-[281px] max-w-full"
                 placeholder="*******"
                 type="password"
               />
