@@ -1,9 +1,31 @@
-import type { NextPage } from "next";
+"use client";
+
+import type { FormEvent } from "react";
+import { useState } from "react";
 import Image from "next/image";
 import Link from 'next/link';
+import { useRouter } from "next/navigation";
 import './fondo.css';
 
-const Login: NextPage = () => {
+const Login = () => {
+  const router = useRouter();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!email.trim() || !password.trim()) {
+      setError("Ingresa tu correo electrónico y contraseña.");
+      return;
+    }
+
+    // La autenticación real se conectará cuando exista el backend.
+    localStorage.setItem("comunidad-conectada-auth", "true");
+    localStorage.setItem("comunidad-conectada-user", email.trim());
+    router.push("/admin/directorio");
+  };
+
   return (
     <div 
       className="w-full min-h-screen relative flex flex-col items-center justify-center py-[20px] px-[30px] box-border bg-cover bg-no-repeat bg-top leading-[normal] tracking-[normal]" 
@@ -15,7 +37,7 @@ const Login: NextPage = () => {
       <div className="fondo-cuadricula absolute inset-0 z-0 pointer-events-none" />
 
       {/* Formulario de Login: Ahora con z-10 para posicionarse arriba de la cuadrícula y perfectamente centrado */}
-      <form className="m-0 w-full relative z-10 shadow-[0px_7.1px_16.8px_4.42px_rgba(0,_0,_0,_0.25)] rounded-[26.5px] bg-[#f5f7fa] flex flex-col items-start justify-center pt-[29.1px] pb-[29.2px] pl-[35px] pr-9 box-border gap-[23.2px] max-w-[578px] shrink-0 mq578:max-w-full mq630:pt-5 mq630:pb-5 mq630:box-border hover:text-black">
+      <form onSubmit={handleSubmit} className="m-0 w-full relative z-10 shadow-[0px_7.1px_16.8px_4.42px_rgba(0,_0,_0,_0.25)] rounded-[26.5px] bg-[#f5f7fa] flex flex-col items-start justify-center pt-[29.1px] pb-[29.2px] pl-[35px] pr-9 box-border gap-[23.2px] max-w-[578px] shrink-0 mq578:max-w-full mq630:pt-5 mq630:pb-5 mq630:box-border hover:text-black">
         <Link href="https://comunidadconectada.x10.mx/" className="w-[44.9px] h-[50.6px] flex justify-center items-center pt-0 px-0 pb-[5.7px] box-border bg-[#0a496a] rounded-2xl hover:bg-[#3A7594]">
           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white lucide lucide-arrow-left-icon lucide-arrow-left"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
         </Link>
@@ -45,7 +67,10 @@ const Login: NextPage = () => {
             <input
               className="w-full [border:none] [outline:none] bg-[transparent] h-[27px] flex-1 flex items-center font-['Satoshi_Variable'] text-lg text-[#000000] min-w-[250px] max-w-full"
               placeholder="comunidadconectada@gmail.com"
-              type="text"
+              type="email"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              required
             />
           </div>
         </div>
@@ -62,6 +87,9 @@ const Login: NextPage = () => {
                 className="w-[calc(100%_-_18.9px)] [border:none] [outline:none] bg-[transparent] h-[27px] flex-1 overflow-hidden flex items-start font-['Satoshi_Variable'] text-lg text-[#000000] min-w-[281px] max-w-full"
                 placeholder="*******"
                 type="password"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                required
               />
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="hide text-[#000000] lucide lucide-eye-icon lucide-eye"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></svg>
             </div>
@@ -78,6 +106,8 @@ const Login: NextPage = () => {
             </div>
           </div>
         </button>
+
+        {error && <p role="alert" className="m-0 self-stretch text-center text-sm text-red-700">{error}</p>}
 
         <div className="self-stretch flex items-center justify-center py-[2.8px] px-0">
           <div className="flex-1 relative text-[18.2px] leading-[150%] text-right flex items-center w-[287.1px] shrink-0 max-w-[287px]">
