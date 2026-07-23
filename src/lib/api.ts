@@ -35,27 +35,35 @@ export async function fetchApi<T>(
   }
   
   if (!response.ok) {
-    let errorData;
+    const responseText = await response.text();
+    let errorData: Record<string, unknown> = {};
+
     try {
-      errorData = await response.json();
+      if (responseText.trim()) {
+        const parsedData: unknown = JSON.parse(responseText);
+        if (parsedData && typeof parsedData === 'object') {
+          errorData = parsedData as Record<string, unknown>;
+        }
+      }
     } catch {
-      errorData = { detail: 'Error en la petición' };
+      // La respuesta puede ser HTML o estar vacía (por ejemplo, un proxy).
     }
-    
+
     console.error('API Error Response:', {
       status: response.status,
       statusText: response.statusText,
       data: errorData,
+      body: responseText || '(respuesta vacía)',
     });
-    
-    // Manejar diferentes formatos de error
-    const errorMessage = 
-      errorData.detail || 
-      errorData.message || 
-      errorData.non_field_errors?.[0] ||
-      JSON.stringify(errorData) ||
-      `Error ${response.status}: ${response.statusText}`;
-    
+
+    const nonFieldErrors = errorData.non_field_errors;
+    const errorMessage =
+      (typeof errorData.detail === 'string' && errorData.detail) ||
+      (typeof errorData.message === 'string' && errorData.message) ||
+      (Array.isArray(nonFieldErrors) && typeof nonFieldErrors[0] === 'string' && nonFieldErrors[0]) ||
+      (Object.keys(errorData).length > 0 ? JSON.stringify(errorData) : '') ||
+      `Error ${response.status}: ${response.statusText || 'Error en la petición'}`;
+
     throw new Error(errorMessage);
   }
 

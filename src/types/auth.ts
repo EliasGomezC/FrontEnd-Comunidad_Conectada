@@ -3,9 +3,24 @@ export interface LoginRequest {
   password: string;
 }
 
+export interface RegisterRequest {
+  nombres: string;
+  apellidos: string;
+  email: string;
+  telefono?: string;
+  numero_casa?: string;
+  codigo_postal?: string;
+  password: string;
+  password_confirm: string;
+}
+
 export interface TokenResponse {
   access: string;
   refresh: string;
+}
+
+export interface RegisterResponse extends TokenResponse {
+  user: User;
 }
 
 export interface RefreshTokenRequest {
@@ -21,12 +36,30 @@ export interface User {
   is_active: boolean;
   date_joined: string;
   perfil?: Perfil;
+  membresias?: Membership[];
+  role?: 'admin' | 'moderador' | 'habitante';
 }
 
 export interface Perfil {
   id: number;
-  user: number;
-  role: 'admin' | 'moderador' | 'habitante';
-  phone?: string;
-  address?: string;
+  usuario: string;
+  nombres: string;
+  apellidos: string;
+  numero_casa: string;
+  codigo_postal: string;
+  telefono: string;
+  casa?: string | null;
+  avatar?: string;
+  bio: string;
+}
+
+export interface Membership {
+  id: string;
+  privada: string;
+  privada_nombre: string;
+  privada_codigo: string;
+  rol: 'moderador' | 'habitante';
+  usuario?: string;
+  status?: string;
+  modulos_contratados?: string[];
 }

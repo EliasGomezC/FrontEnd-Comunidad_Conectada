@@ -6,6 +6,7 @@ export interface Usuario {
   last_name: string;
   is_active: boolean;
   date_joined: string;
+  role?: 'admin' | 'moderador' | 'habitante';
   perfil?: {
     id: string;
     usuario: string;
