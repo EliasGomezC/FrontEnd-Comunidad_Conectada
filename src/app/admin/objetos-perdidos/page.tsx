@@ -4,9 +4,10 @@ import { useState, useMemo } from "react";
 import { IoReload } from "react-icons/io5";
 import Sidebar from "@/components/Sidebar";
 import SearchBar from "@/components/SearchBar";
+import NewObjectModal, { type NewObjectPayload } from "./components/NewObjectModal";
 import ObjectTabs from "./components/ObjectTabs";
 import ObjectBoard from "./components/ObjectBoard";
-import objects from "./data";
+import objects, { type LostObject } from "./data";
 
 const palette = {
   active: {
@@ -28,15 +29,43 @@ const palette = {
 
 export default function ObjetosPerdidosPage() {
   const [activeTab, setActiveTab] = useState<"active" | "completed" | "all">("active");
+  const [items, setItems] = useState<LostObject[]>(objects);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+
+  const handleCreateObject = (newObject: NewObjectPayload) => {
+    const highestId = items.reduce((highest, item) => Math.max(highest, item.id), 0);
+    const date = new Intl.DateTimeFormat("es-MX", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    }).format(new Date());
+
+    setItems((currentItems) => [
+      {
+        id: highestId + 1,
+        title: newObject.title,
+        description: newObject.location
+          ? `${newObject.location}. ${newObject.description}`
+          : newObject.description,
+        date,
+        owner: "Usuario actual",
+        image: newObject.image,
+        type: newObject.type,
+        status: "active",
+      },
+      ...currentItems,
+    ]);
+    setActiveTab("active");
+  };
 
   const filteredByStatus = useMemo(
     () =>
-      objects.filter((obj) => {
+      items.filter((obj) => {
         if (activeTab === "active") return obj.status === "active";
         if (activeTab === "completed") return obj.status === "completed";
         return true;
       }),
-    [activeTab],
+    [activeTab, items],
   );
 
   const lostItems = useMemo(
@@ -50,16 +79,20 @@ export default function ObjetosPerdidosPage() {
   );
 
   return (
-    <div className="flex min-h-screen bg-[#dfe5eb]">
+    <div className="flex h-screen overflow-hidden bg-[#dfe5eb]">
       <Sidebar activeItem="Objetos Perdidos" />
 
-      <main className="flex-1 p-[30px]">
+      <main className="flex min-w-0 flex-1 flex-col overflow-hidden p-[30px]">
         <h1 className="text-[52px] m-0 text-[#124b70]">Objetos Perdidos</h1>
         <p className="text-[#677e8c] mb-6">Administración de objetos extraviados/resguardados</p>
 
         <div className="flex items-center gap-4 mb-6">
           <SearchBar placeholder="Buscar objeto..." className="flex-1 max-w-[500px]" />
-          <button className="bg-[#0a496a] text-white border-none px-[24px] py-[16px] rounded-[14px] cursor-pointer hover:bg-[#0d5a80] whitespace-nowrap">
+          <button
+            type="button"
+            onClick={() => setIsCreateModalOpen(true)}
+            className="bg-[#0a496a] text-white border-none px-[24px] py-[16px] rounded-[14px] cursor-pointer hover:bg-[#0d5a80] whitespace-nowrap"
+          >
             + Nuevo objeto
           </button>
           <ObjectTabs activeTab={activeTab} onTabChange={setActiveTab} palette={palette} />
@@ -68,14 +101,22 @@ export default function ObjetosPerdidosPage() {
           </button>
         </div>
 
-        <ObjectBoard
-          lostItems={lostItems}
-          foundItems={foundItems}
-          allItems={objects}
-          view={activeTab}
-          palette={palette}
-        />
+        <div className="min-h-0 flex-1">
+          <ObjectBoard
+            lostItems={lostItems}
+            foundItems={foundItems}
+            allItems={items}
+            view={activeTab}
+            palette={palette}
+          />
+        </div>
       </main>
+
+      <NewObjectModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onCreate={handleCreateObject}
+      />
     </div>
   );
 }

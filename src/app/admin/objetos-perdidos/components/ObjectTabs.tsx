@@ -14,20 +14,23 @@ const tabs = [
 
 export default function ObjectTabs({ activeTab, onTabChange, palette }: ObjectTabsProps) {
   return (
-    <>
-      {tabs.map((tab) => (
-        <button
-          key={tab.key}
-          onClick={() => onTabChange(tab.key)}
-          className={`pb-1 text-sm font-medium transition-all ${
-            activeTab === tab.key
-              ? `${palette[tab.key].tabBorder} text-gray-800`
-              : "text-gray-500 hover:text-gray-700"
-          }`}
-        >
-          {tab.label}
-        </button>
-      ))}
-    </>
+    <div className="flex items-center gap-6">
+      {tabs.map((tab) => {
+        const isActive = activeTab === tab.key;
+        return (
+          <button
+            key={tab.key}
+            onClick={() => onTabChange(tab.key)}
+            className={`pb-1 text-base font-semibold transition-all ${
+              isActive
+                ? `border-b-2 ${palette[tab.key].tabBorder} text-slate-800`
+                : "text-gray-400 hover:text-gray-600 border-b-2 border-transparent"
+            }`}
+          >
+            {tab.label}
+          </button>
+        );
+      })}
+    </div>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import ObjectCard from "@/components/ObjectCard";
+import { LuPackage } from "react-icons/lu";
 import type { LostObject } from "../data";
 
 interface FoundSectionProps {
@@ -12,15 +13,22 @@ interface FoundSectionProps {
 
 export default function FoundSection({ items, headerColor, panelColor, showCheck = false }: FoundSectionProps) {
   return (
-    <section className="flex-1 min-w-0">
-      <div className={`${headerColor} rounded-t-xl px-5 py-3`}>
-        <h2 className="text-white text-base font-semibold">Objetos resguardados</h2>
+    <section className="flex h-full min-w-0 flex-1 flex-col">
+      {/* Banner exterior */}
+      <div className={`${headerColor} rounded-t-xl px-3 py-2`}>
+        {/* Cápsula de texto/icono */}
+        <div className="inline-flex items-center gap-2 bg-white px-3 py-1 rounded-full shadow-sm">
+          <LuPackage className="text-xl text-amber-900" />
+          <h2 className="text-base font-bold text-gray-900">Objetos resguardados</h2>
+        </div>
       </div>
-      <div className={`${panelColor} rounded-b-xl p-4 shadow-[0_2px_8px_rgba(0,0,0,0.1)]`}>
+    
+      {/* Contenedor del panel */}
+      <div className={`${panelColor} min-h-0 flex-1 overflow-x-hidden overflow-y-auto rounded-b-xl p-4 shadow-sm`}>
         {items.length === 0 ? (
-          <p className="text-sm text-gray-400 text-center py-8">No hay objetos resguardados</p>
+          <p className="text-sm text-gray-500 text-center py-8">No hay objetos resguardados</p>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 pr-1 sm:grid-cols-2">
             {items.map((item) => (
               <ObjectCard key={item.id} item={item} showCheck={showCheck} />
             ))}
