@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { IoPeople, IoDocumentText, IoBook, IoDocuments, IoStatsChart, IoCalendarClear, IoCube, IoCash } from "react-icons/io5";
+import { useAuth } from "@/features/authentication/AuthContext";
 
 interface SidebarProps {
   activeItem?: string;
@@ -10,24 +11,28 @@ interface SidebarProps {
 
 interface MenuItem {
   label: string;
+  code: string;
   icon: React.ReactNode;
   href: string;
 }
 
 const menuItems: MenuItem[] = [
-  { label: "Usuarios", icon: <IoPeople className="h-6 w-6 shrink-0" />, href: "/admin/usuarios" },
-  { label: "Reportes", icon: <IoDocumentText className="h-6 w-6 shrink-0" />, href: "/admin/reportes" },
-  { label: "Reservaciones", icon: <IoBook className="h-6 w-6 shrink-0" />, href: "/admin/reservaciones" },
-  { label: "Directorio", icon: <IoDocuments className="h-6 w-6 shrink-0" />, href: "/admin/directorio" },
-  { label: "Encuestas", icon: <IoStatsChart className="h-6 w-6 shrink-0" />, href: "/admin/encuestas" },
-  { label: "Eventos", icon: <IoCalendarClear className="h-6 w-6 shrink-0" />, href: "/admin/eventos" },
-  { label: "Objetos Perdidos", icon: <IoCube className="h-6 w-6 shrink-0" />, href: "/admin/objetos-perdidos" },
-  { label: "Pagos", icon: <IoCash className="h-6 w-6 shrink-0" />, href: "/admin/pagos" },
+  { code: "usuarios", label: "Usuarios", icon: <IoPeople className="h-6 w-6 shrink-0" />, href: "/admin/usuarios" },
+  { code: "reportes", label: "Reportes", icon: <IoDocumentText className="h-6 w-6 shrink-0" />, href: "/admin/reportes" },
+  { code: "reservaciones", label: "Reservaciones", icon: <IoBook className="h-6 w-6 shrink-0" />, href: "/admin/reservaciones" },
+  { code: "directorio", label: "Directorio", icon: <IoDocuments className="h-6 w-6 shrink-0" />, href: "/admin/directorio" },
+  { code: "encuestas", label: "Encuestas", icon: <IoStatsChart className="h-6 w-6 shrink-0" />, href: "/admin/encuestas" },
+  { code: "eventos", label: "Eventos", icon: <IoCalendarClear className="h-6 w-6 shrink-0" />, href: "/admin/eventos" },
+  { code: "objetos-perdidos", label: "Objetos Perdidos", icon: <IoCube className="h-6 w-6 shrink-0" />, href: "/admin/objetos-perdidos" },
+  { code: "pagos", label: "Pagos", icon: <IoCash className="h-6 w-6 shrink-0" />, href: "/admin/pagos" },
 ];
 
 const Sidebar = ({ activeItem }: SidebarProps) => {
   const pathname = usePathname();
-  const router = useRouter();
+  const { user, logout } = useAuth();
+  const isSystemAdmin = user?.role === "admin";
+  const contractedModules = new Set(user?.membresias?.flatMap((membership) => membership.modulos_contratados || []) || []);
+  const visibleMenuItems = isSystemAdmin ? menuItems : menuItems.filter((item) => contractedModules.has(item.code));
 
   const isActive = (href: string, label?: string) => {
     if (label) {
@@ -43,7 +48,8 @@ const Sidebar = ({ activeItem }: SidebarProps) => {
       </div>
 
       <nav className="mt-6 flex flex-col gap-2">
-        {menuItems.map((item) => (
+        {isSystemAdmin && <Link href="/admin-comunidad" className="mb-3 flex items-center justify-center rounded-xl bg-[#c1e1c1] px-4 py-3 font-semibold text-[#234b31]">Administración global</Link>}
+        {visibleMenuItems.map((item) => (
           <Link
             key={item.href}
             href={item.href}
@@ -59,15 +65,12 @@ const Sidebar = ({ activeItem }: SidebarProps) => {
       </nav>
 
       <div className="mt-auto bg-[#dff1ff] text-[#0a496a] rounded-[24px] p-4 text-center">
-        <strong>Usuario321</strong>
+        <strong>{user?.perfil?.nombres || user?.email || "Usuario"}</strong>
         <br />
-        Moderador
+        {user?.role === "admin" ? "Administrador" : "Moderador"}
         <button
           type="button"
-          onClick={() => {
-            localStorage.removeItem("comunidad-conectada-auth");
-            router.replace("/login");
-          }}
+          onClick={logout}
           className="mt-3 w-full rounded-lg border border-[#0a496a] bg-transparent px-3 py-2 text-sm font-semibold hover:bg-[#0a496a] hover:text-white"
         >
           Cerrar sesión
