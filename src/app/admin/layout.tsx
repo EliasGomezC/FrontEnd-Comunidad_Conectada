@@ -5,15 +5,17 @@ import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/features/authentication/AuthContext";
 
 export default function AdminLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isModerator, isLoading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
       router.replace(`/login?redirect=${encodeURIComponent(pathname)}`);
+    } else if (!isLoading && isAuthenticated && !isModerator) {
+      router.replace('/lobby');
     }
-  }, [pathname, isAuthenticated, isLoading, router]);
+  }, [pathname, isAuthenticated, isModerator, isLoading, router]);
 
   if (isLoading) {
     return <div className="min-h-screen bg-[#dfe5eb] flex items-center justify-center">
@@ -21,7 +23,7 @@ export default function AdminLayout({ children }: Readonly<{ children: React.Rea
     </div>;
   }
 
-  if (!isAuthenticated) {
+  if (!isAuthenticated || !isModerator) {
     return null;
   }
 
