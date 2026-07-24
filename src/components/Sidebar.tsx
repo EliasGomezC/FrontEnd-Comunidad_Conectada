@@ -1,8 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { IoPeople, IoDocumentText, IoBook, IoDocuments, IoStatsChart, IoCalendarClear, IoCube, IoCash } from "react-icons/io5";
+import { IoPeople, IoDocumentText, IoBook, IoDocuments, IoStatsChart, IoCalendarClear, IoCube, IoCash, IoCopy } from "react-icons/io5";
 import { useAuth } from "@/features/authentication/AuthContext";
 
 interface SidebarProps {
@@ -31,8 +32,19 @@ const Sidebar = ({ activeItem }: SidebarProps) => {
   const pathname = usePathname();
   const { user, logout } = useAuth();
   const isSystemAdmin = user?.role === "admin";
-  const contractedModules = new Set(user?.membresias?.flatMap((membership) => membership.modulos_contratados || []) || []);
+  const [copiedCode, setCopiedCode] = useState<string | null>(null);
+
+  const memberships = user?.membresias || [];
+  const contractedModules = new Set(memberships.flatMap((m) => m.modulos_contratados || []) || []);
   const visibleMenuItems = isSystemAdmin ? menuItems : menuItems.filter((item) => contractedModules.has(item.code));
+
+  const copyToClipboard = async (code: string) => {
+    try {
+      await navigator.clipboard.writeText(code);
+      setCopiedCode(code);
+      setTimeout(() => setCopiedCode(null), 2000);
+    } catch { /* fallback silencioso */ }
+  };
 
   const isActive = (href: string, label?: string) => {
     if (label) {
@@ -46,6 +58,24 @@ const Sidebar = ({ activeItem }: SidebarProps) => {
       <div className="bg-[#dff1ff] text-[#0a496a] p-4 rounded-[14px] font-bold text-center">
         COMUNIDAD CONECTADA
       </div>
+
+      {!isSystemAdmin && memberships.map((m) => (
+        <div key={m.id} className="mt-3 rounded-xl bg-white/10 p-3 text-center text-sm">
+          <p className="text-xs opacity-70">{m.privada_nombre}</p>
+          <div className="mt-1 flex items-center justify-center gap-2">
+            <code className="rounded bg-white/20 px-2 py-0.5 font-mono text-base tracking-wider">{m.privada_codigo}</code>
+            <button
+              type="button"
+              onClick={() => copyToClipboard(m.privada_codigo)}
+              className="rounded p-1 hover:bg-white/20 transition-colors"
+              title="Copiar código"
+            >
+              <IoCopy className="h-4 w-4" />
+            </button>
+          </div>
+          {copiedCode === m.privada_codigo && <p className="mt-1 text-xs text-green-300">¡Copiado!</p>}
+        </div>
+      ))}
 
       <nav className="mt-6 flex flex-col gap-2">
         {isSystemAdmin && <Link href="/admin-comunidad" className="mb-3 flex items-center justify-center rounded-xl bg-[#c1e1c1] px-4 py-3 font-semibold text-[#234b31]">Administración global</Link>}
