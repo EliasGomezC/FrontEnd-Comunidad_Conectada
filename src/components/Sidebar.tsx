@@ -30,13 +30,26 @@ const menuItems: MenuItem[] = [
 
 const Sidebar = ({ activeItem }: SidebarProps) => {
   const pathname = usePathname();
-  const { user, logout } = useAuth();
+  const { user, logout, isModerator, activeMembership } = useAuth();
   const isSystemAdmin = user?.role === "admin";
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
 
-  const memberships = user?.membresias || [];
+  const memberships = activeMembership ? [activeMembership] : [];
   const contractedModules = new Set(memberships.flatMap((m) => m.modulos_contratados || []) || []);
-  const visibleMenuItems = isSystemAdmin ? menuItems : menuItems.filter((item) => contractedModules.has(item.code));
+  const habitanteRoutes: Record<string, string> = {
+    reportes: "/reportes",
+    reservaciones: "/reservaciones",
+    directorio: "/directorio",
+    eventos: "/eventos-proyectos",
+    "objetos-perdidos": "/objetos-perdidos",
+    pagos: "/pagos",
+  };
+  const roleItems = isModerator ? menuItems : menuItems.filter((item) => !["usuarios", "encuestas"].includes(item.code)).map((item) => ({
+    ...item,
+    href: habitanteRoutes[item.code] || "/lobby",
+    label: item.code === "eventos" ? "Eventos y proyectos" : item.label,
+  }));
+  const visibleMenuItems = isSystemAdmin ? menuItems : roleItems.filter((item) => contractedModules.has(item.code));
 
   const copyToClipboard = async (code: string) => {
     try {
@@ -55,9 +68,14 @@ const Sidebar = ({ activeItem }: SidebarProps) => {
 
   return (
     <aside className="w-[280px] bg-[#0a496a] text-white m-5 rounded-[30px] p-5 flex flex-col min-h-[95vh] shadow-lg">
-      <div className="bg-[#dff1ff] text-[#0a496a] p-4 rounded-[14px] font-bold text-center">
+      <Link
+        href="/lobby"
+        aria-label="Ir al lobby para cambiar de privada"
+        title="Cambiar de privada"
+        className="block bg-[#dff1ff] text-[#0a496a] p-4 rounded-[14px] font-bold text-center transition hover:bg-white hover:shadow-md"
+      >
         COMUNIDAD CONECTADA
-      </div>
+      </Link>
 
       {!isSystemAdmin && memberships.map((m) => (
         <div key={m.id} className="mt-3 rounded-xl bg-white/10 p-3 text-center text-sm">
@@ -77,11 +95,17 @@ const Sidebar = ({ activeItem }: SidebarProps) => {
         </div>
       ))}
 
+      {!isSystemAdmin && activeMembership && (
+        <Link href="/lobby" className="mt-3 rounded-lg border border-white/40 px-3 py-2 text-center text-sm font-semibold hover:bg-white/10">
+          Cambiar de privada
+        </Link>
+      )}
+
       <nav className="mt-6 flex flex-col gap-2">
         {isSystemAdmin && <Link href="/admin-comunidad" className="mb-3 flex items-center justify-center rounded-xl bg-[#c1e1c1] px-4 py-3 font-semibold text-[#234b31]">Administración global</Link>}
         {visibleMenuItems.map((item) => (
           <Link
-            key={item.href}
+            key={item.code}
             href={item.href}
             className={`flex items-center gap-3 px-4 py-3 rounded-xl w-full no-underline transition-colors ${
               isActive(item.href, item.label)
@@ -97,7 +121,7 @@ const Sidebar = ({ activeItem }: SidebarProps) => {
       <div className="mt-auto bg-[#dff1ff] text-[#0a496a] rounded-[24px] p-4 text-center">
         <strong>{user?.perfil?.nombres || user?.email || "Usuario"}</strong>
         <br />
-        {user?.role === "admin" ? "Administrador" : "Moderador"}
+        {user?.role === "admin" ? "Administrador" : isModerator ? "Moderador" : "Habitante"}
         <button
           type="button"
           onClick={logout}

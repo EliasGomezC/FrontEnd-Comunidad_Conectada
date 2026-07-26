@@ -11,7 +11,7 @@ import Pagination from "@/components/Pagination";
 import { IoEyeOutline } from "react-icons/io5";
 
 const UsuariosPage = () => {
-  const { token, logout } = useAuth();
+  const { token, logout, activeMembership } = useAuth();
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -20,16 +20,18 @@ const UsuariosPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
-    if (!token) return;
+    if (!token || !activeMembership) return;
 
     const fetchUsuarios = async () => {
       try {
         setIsLoading(true);
         const data = await getUsuarios(token, {
+          privada: activeMembership.privada,
           search: searchTerm || undefined,
+          page: currentPage,
         });
         setUsuarios(data.results);
-        setTotalPages(Math.ceil(data.count / 10));
+        setTotalPages(Math.max(1, Math.ceil(data.count / 20)));
         setError(null);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Error al cargar usuarios");
@@ -42,7 +44,7 @@ const UsuariosPage = () => {
     };
 
     fetchUsuarios();
-  }, [token, currentPage, searchTerm, logout]);
+  }, [token, activeMembership, currentPage, searchTerm, logout]);
 
   const roleToLabel: Record<string, "Moderador" | "Habitante"> = {
     admin: "Moderador",

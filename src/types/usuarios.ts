@@ -16,13 +16,14 @@ export interface Usuario {
     telefono: string;
     bio: string;
   };
-  role?: 'admin' | 'moderador' | 'habitante';
 }
 
 export interface UsuarioFilter {
+  privada?: string;
   search?: string;
   role?: 'admin' | 'moderador' | 'habitante';
   is_active?: boolean;
+  page?: number;
 }
 
 export interface UsuariosResponse {

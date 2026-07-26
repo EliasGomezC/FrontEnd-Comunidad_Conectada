@@ -12,7 +12,7 @@ export async function getObjetosPerdidos(
 
 export async function getObjetoPerdidoById(
   token: string,
-  id: number
+  id: string
 ): Promise<ObjetoPerdido> {
   return fetchApiAuth<ObjetoPerdido>(`/api/objetos-perdidos/${id}/`, token);
 }

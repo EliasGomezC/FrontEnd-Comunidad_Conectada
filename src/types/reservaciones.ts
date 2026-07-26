@@ -1,27 +1,5 @@
-export interface Reservacion {
-  id: number;
-  area: number;
-  area_nombre?: string;
-  fecha: string;
-  hora_inicio: string;
-  hora_fin: string;
-  estado: 'pendiente' | 'aprobado' | 'rechazado' | 'completado' | 'cancelado';
-  solicitante?: number;
-  solicitante_nombre?: string;
-  notas?: string;
-  created_at?: string;
-}
-
-export interface ReservacionFilter {
-  area?: number;
-  fecha?: string;
-  estado?: 'pendiente' | 'aprobado' | 'rechazado' | 'completado' | 'cancelado';
-  search?: string;
-}
-
-export interface ReservacionesResponse {
-  count: number;
-  next: string | null;
-  previous: string | null;
-  results: Reservacion[];
-}
+export type EstadoReservacion = 'pendiente' | 'aprobada' | 'cancelada';
+export interface Reservacion { id:string; folio:number; area:string; area_nombre:string; usuario:string; usuario_nombre:string; fecha:string; hora_inicio:string; hora_fin:string; num_asistentes:number; estado:EstadoReservacion; descripcion:string; }
+export interface CrearReservacionRequest { area:string; fecha:string; hora_inicio:string; hora_fin:string; num_asistentes:number; descripcion:string; }
+export interface ReservacionFilter { privada?:string; area?:string; fecha?:string; estado?:EstadoReservacion; search?:string; page?:number; }
+export interface ReservacionesResponse { count:number; next:string|null; previous:string|null; results:Reservacion[]; }

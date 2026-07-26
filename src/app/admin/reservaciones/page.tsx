@@ -19,7 +19,7 @@ const estadoMap: Record<string, "Aprobado" | "Pendiente" | "Rechazado" | "Comple
 };
 
 const ReservacionesPage = () => {
-  const { token, logout } = useAuth();
+  const { token, logout, activeMembership } = useAuth();
   const [reservaciones, setReservaciones] = useState<Reservacion[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -28,12 +28,12 @@ const ReservacionesPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
-    if (!token) return;
+    if (!token || !activeMembership) return;
 
     const fetchReservaciones = async () => {
       try {
         setIsLoading(true);
-        const data = await getReservaciones(token);
+        const data = await getReservaciones(token, { privada: activeMembership.privada });
         setReservaciones(data.results);
         setTotalPages(Math.ceil(data.count / 10));
         setError(null);
@@ -48,7 +48,7 @@ const ReservacionesPage = () => {
     };
 
     fetchReservaciones();
-  }, [token, logout]);
+  }, [token, logout, activeMembership]);
 
   const filteredReservaciones = useMemo(() => {
     if (!searchTerm) return reservaciones;
@@ -56,8 +56,8 @@ const ReservacionesPage = () => {
     return reservaciones.filter(
       (reservacion) =>
         reservacion.area_nombre?.toLowerCase().includes(term) ||
-        reservacion.solicitante_nombre?.toLowerCase().includes(term) ||
-        reservacion.notas?.toLowerCase().includes(term)
+        reservacion.usuario_nombre?.toLowerCase().includes(term) ||
+        reservacion.descripcion?.toLowerCase().includes(term)
     );
   }, [reservaciones, searchTerm]);
 
@@ -122,7 +122,7 @@ const ReservacionesPage = () => {
                         {reservation.hora_inicio} - {reservation.hora_fin}
                       </td>
                       <td className="p-4 text-slate-900">
-                        {reservation.solicitante_nombre || `Usuario ${reservation.solicitante}`}
+                        {reservation.usuario_nombre || `Usuario ${reservation.usuario}`}
                       </td>
                       <td className="p-4 text-slate-900">
                         <StatusBadge status={estadoMap[reservation.estado] || "Pendiente"} />

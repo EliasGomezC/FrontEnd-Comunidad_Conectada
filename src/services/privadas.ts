@@ -30,7 +30,7 @@ export async function crearPrivada(
   token: string,
   data: {
     nombre: string;
-    modulos: string[];
+    modulos?: string[];
     modulos_contratados: string[];
     dir_num_exterior?: string;
     dir_colonia?: string;

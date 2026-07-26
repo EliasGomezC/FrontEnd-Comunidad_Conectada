@@ -35,19 +35,19 @@ const iconMap: Record<string, React.ReactNode> = {
 const defaultIcon = <IoCar size={50} color="#12486d" />;
 
 const DirectorioPage = () => {
-  const { token, logout } = useAuth();
+  const { token, logout, activeMembership } = useAuth();
   const [contactos, setContactos] = useState<DirectorioContacto[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
-    if (!token) return;
+    if (!token || !activeMembership) return;
 
     const fetchDirectorio = async () => {
       try {
         setIsLoading(true);
-        const data = await getDirectorio(token);
+        const data = await getDirectorio(token, { privada: activeMembership.privada });
         setContactos(data.results);
         setError(null);
       } catch (err) {
@@ -61,7 +61,7 @@ const DirectorioPage = () => {
     };
 
     fetchDirectorio();
-  }, [token, logout]);
+  }, [token, logout, activeMembership]);
 
   const filteredContactos = useMemo(() => {
     if (!searchTerm) return contactos;
@@ -69,7 +69,7 @@ const DirectorioPage = () => {
     return contactos.filter(
       (contacto) =>
         contacto.nombre.toLowerCase().includes(term) ||
-        contacto.categoria.toLowerCase().includes(term) ||
+        contacto.categorias.toLowerCase().includes(term) ||
         contacto.descripcion?.toLowerCase().includes(term)
     );
   }, [contactos, searchTerm]);
@@ -122,13 +122,13 @@ const DirectorioPage = () => {
                   <div className="flex-1">
                     <h2 className="m-0 text-xl text-slate-900">{contact.nombre}</h2>
                     <span className="inline-block p-1 px-2 rounded-[8px] bg-[#c8f0bf] text-[#215d2d] text-sm mt-2">
-                      {contact.categoria}
+                      {contact.categorias}
                     </span>
-                    <p className="mt-2"><strong>Tel:</strong> {contact.telefono}</p>
-                    <small className="text-slate-900">{contact.horario || "Sin horario especificado"}</small>
+                    <p className="mt-2"><strong>Tel:</strong> {contact.num_tel || "Sin teléfono"}</p>
+                    <small className="text-slate-900">{contact.ubicacion || "Sin ubicación especificada"}</small>
                   </div>
                   <div className="w-[150px] h-[130px] rounded-[14px] bg-[#d9e7f3] flex items-center justify-center">
-                    {getIcon(contact.categoria)}
+                    {getIcon(contact.categorias)}
                   </div>
                 </div>
                 <div className="flex justify-end gap-2 mt-4">

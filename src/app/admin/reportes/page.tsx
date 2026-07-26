@@ -6,7 +6,7 @@ import { getReportes } from "@/services/reportes";
 import { Reporte } from "@/types/reportes";
 import Sidebar from "@/components/Sidebar";
 import SearchBar from "@/components/SearchBar";
-import { IoDocumentText, IoDownloadOutline } from "react-icons/io5";
+import { IoDownloadOutline } from "react-icons/io5";
 
 const estadoMap: Record<string, "Generado" | "Pendiente" | "Programado"> = {
   pendiente: "Pendiente",
@@ -16,19 +16,19 @@ const estadoMap: Record<string, "Generado" | "Pendiente" | "Programado"> = {
 };
 
 const ReportesPage = () => {
-  const { token, logout } = useAuth();
+  const { token, logout, activeMembership } = useAuth();
   const [reportes, setReportes] = useState<Reporte[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
-    if (!token) return;
+    if (!token || !activeMembership) return;
 
     const fetchReportes = async () => {
       try {
         setIsLoading(true);
-        const data = await getReportes(token);
+        const data = await getReportes(token, { privada: activeMembership.privada });
         setReportes(data.results);
         setError(null);
       } catch (err) {
@@ -42,7 +42,7 @@ const ReportesPage = () => {
     };
 
     fetchReportes();
-  }, [token, logout]);
+  }, [token, logout, activeMembership]);
 
   const filteredReportes = useMemo(() => {
     if (!searchTerm) return reportes;
@@ -51,7 +51,7 @@ const ReportesPage = () => {
       (reporte) =>
         reporte.descripcion.toLowerCase().includes(term) ||
         reporte.tipo.toLowerCase().includes(term) ||
-        reporte.ubicacion?.toLowerCase().includes(term)
+        reporte.titulo.toLowerCase().includes(term)
     );
   }, [reportes, searchTerm]);
 
@@ -100,7 +100,7 @@ const ReportesPage = () => {
                     {report.tipo}
                   </span>
                   <p className="mt-2 text-sm text-slate-900">
-                    Creado: {new Date(report.fecha_reporte).toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric" })}
+                    Suceso: {report.fecha_suceso ? new Date(`${report.fecha_suceso}T12:00`).toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric" }) : "Sin fecha"}
                   </p>
                 </div>
                 <div className="flex flex-col items-end gap-2">

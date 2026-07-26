@@ -12,7 +12,7 @@ export async function getDirectorio(
 
 export async function getContactoById(
   token: string,
-  id: number
+  id: string
 ): Promise<DirectorioContacto> {
   return fetchApiAuth<DirectorioContacto>(`/api/directorio/${id}/`, token);
 }

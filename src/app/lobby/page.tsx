@@ -7,9 +7,10 @@ import { useAuth } from "@/features/authentication/AuthContext";
 import { crearPrivada, getMisPrivadas, getModulosSistema, unirseAPrivada } from "@/services/privadas";
 import type { ModuloSistema } from "@/types/privadas";
 import type { Membership } from "@/types/auth";
+import { IoArrowForward } from "react-icons/io5";
 
 export default function LobbyPage() {
-  const { token, user, isAuthenticated, isLoading, isModerator, logout } = useAuth();
+  const { token, user, isAuthenticated, isLoading, logout, selectPrivate } = useAuth();
   const router = useRouter();
   const [memberships, setMemberships] = useState<Membership[]>([]);
   const [systemModules, setSystemModules] = useState<ModuloSistema[]>([]);
@@ -72,6 +73,11 @@ export default function LobbyPage() {
     } finally { setWorking(false); }
   };
 
+  const enterPrivate = (membership: Membership) => {
+    selectPrivate(membership);
+    router.push(membership.rol === "moderador" ? "/admin/pagos" : "/pagos");
+  };
+
   if (isLoading || !isAuthenticated) return <div className="min-h-screen grid place-items-center">Cargando...</div>;
 
   return (
@@ -80,7 +86,6 @@ export default function LobbyPage() {
         <div><p className="text-sm opacity-80">Bienvenido</p><h1 className="text-xl font-bold">{user?.perfil?.nombres || user?.email}</h1></div>
         <div className="flex items-center gap-2">
           <Link href="/perfil" className="rounded-lg bg-white px-4 py-2 font-semibold text-[#0a496a]">Mi perfil</Link>
-          {isModerator && <Link href="/admin/usuarios" className="rounded-lg bg-[#c1e1c1] px-4 py-2 font-semibold text-[#234b31]">Panel moderador</Link>}
           <button onClick={logout} className="rounded-lg border border-white px-4 py-2 font-semibold text-white hover:bg-white/10">Cerrar sesión</button>
         </div>
       </header>
@@ -88,11 +93,17 @@ export default function LobbyPage() {
       <section className="mx-auto mt-8 max-w-5xl">
         <h2 className="text-3xl font-extrabold text-[#0a496a]">Tus privadas</h2>
         {memberships.length > 0 && <div className="mt-4 grid gap-3 sm:grid-cols-2">
-          {memberships.map((membership) => <article key={membership.id} className="rounded-xl bg-white p-4 shadow">
+          {memberships.map((membership) => <button type="button" onClick={() => enterPrivate(membership)} key={membership.id} className="group rounded-xl bg-white p-5 text-left shadow transition hover:-translate-y-1 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-[#0a496a]">
+            <div className="flex items-start justify-between gap-4">
+              <div>
             <h3 className="font-bold">{membership.privada_nombre}</h3>
             <p className="text-sm">Código: <strong>{membership.privada_codigo}</strong></p>
             <p className="mt-1 text-sm capitalize text-[#0a496a]">Rol: {membership.rol}</p>
-          </article>)}
+              </div>
+              <IoArrowForward className="mt-2 text-2xl text-[#0a496a] transition group-hover:translate-x-1" />
+            </div>
+            <p className="mt-4 text-sm font-semibold text-[#0a496a]">Entrar a la privada</p>
+          </button>)}
         </div>}
 
         <div className="mt-8 grid gap-6 lg:grid-cols-2">

@@ -1,6 +1,6 @@
 import { fetchApiAuth } from '@/lib/api';
 import { buildQueryString } from '@/lib/utils';
-import { Reporte, ReporteFilter, ReportesResponse } from '@/types/reportes';
+import { CrearReporteRequest, Reporte, ReporteFilter, ReportesResponse } from '@/types/reportes';
 
 export async function getReportes(
   token: string,
@@ -12,7 +12,11 @@ export async function getReportes(
 
 export async function getReporteById(
   token: string,
-  id: number
+  id: string
 ): Promise<Reporte> {
   return fetchApiAuth<Reporte>(`/api/reportes/${id}/`, token);
+}
+
+export async function crearReporte(token:string, payload:CrearReporteRequest):Promise<Reporte>{
+  return fetchApiAuth<Reporte>('/api/reportes/',token,{method:'POST',body:JSON.stringify(payload)});
 }

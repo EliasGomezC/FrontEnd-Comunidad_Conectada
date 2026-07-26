@@ -12,7 +12,7 @@ export async function getProyectos(
 
 export async function getProyectoById(
   token: string,
-  id: number
+  id: string
 ): Promise<Proyecto> {
   return fetchApiAuth<Proyecto>(`/api/proyectos/${id}/`, token);
 }

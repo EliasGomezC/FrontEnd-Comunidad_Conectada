@@ -40,15 +40,8 @@ const palette = {
   },
 };
 
-const statusMap: Record<string, "active" | "completed"> = {
-  activo: "active",
-  encontrado: "active",
-  devuelto: "completed",
-  archivado: "completed",
-};
-
 const ObjetosPerdidosPage = () => {
-  const { token, logout } = useAuth();
+  const { token, logout, activeMembership } = useAuth();
   const [objetos, setObjetos] = useState<ObjetoPerdido[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -56,12 +49,12 @@ const ObjetosPerdidosPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
-    if (!token) return;
+    if (!token || !activeMembership) return;
 
     const fetchObjetos = async () => {
       try {
         setIsLoading(true);
-        const data = await getObjetosPerdidos(token);
+        const data = await getObjetosPerdidos(token, { privada: activeMembership.privada });
         setObjetos(data.results);
         setError(null);
       } catch (err) {
@@ -75,11 +68,11 @@ const ObjetosPerdidosPage = () => {
     };
 
     fetchObjetos();
-  }, [token, logout]);
+  }, [token, logout, activeMembership]);
 
   const filteredByStatus = useMemo(() => {
     return objetos.filter((obj) => {
-      const objStatus = statusMap[obj.estado] || "active";
+      const objStatus = obj.fecha_devuelto ? "completed" : "active";
       if (activeTab === "active") return objStatus === "active";
       if (activeTab === "completed") return objStatus === "completed";
       return true;
@@ -91,7 +84,7 @@ const ObjetosPerdidosPage = () => {
     const term = searchTerm.toLowerCase();
     return filteredByStatus.filter(
       (obj) =>
-        obj.titulo.toLowerCase().includes(term) ||
+        obj.nombre.toLowerCase().includes(term) ||
         obj.descripcion.toLowerCase().includes(term)
     );
   }, [filteredByStatus, searchTerm]);
@@ -109,13 +102,13 @@ const ObjetosPerdidosPage = () => {
   const mapToObjectCard = (obj: ObjetoPerdido) => {
     return {
       id: obj.id,
-      title: obj.titulo,
+      title: obj.nombre,
       description: obj.descripcion,
-      date: new Date(obj.fecha).toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric" }),
-      owner: obj.propietario ? `Usuario #${obj.propietario}` : "Desconocido",
+      date: obj.fecha_reporte ? new Date(`${obj.fecha_reporte}T12:00`).toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric" }) : "Sin fecha",
+      owner: obj.reportado_por ? `Usuario #${obj.reportado_por}` : "Desconocido",
       image: obj.imagen || "",
       type: (obj.tipo === "perdido" ? "lost" : "found") as "lost" | "found",
-      status: statusMap[obj.estado] || "active",
+      status: (obj.fecha_devuelto ? "completed" : "active") as "active" | "completed",
     };
   };
 
