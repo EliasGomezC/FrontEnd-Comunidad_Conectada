@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { IoPeople, IoDocumentText, IoBook, IoDocuments, IoStatsChart, IoCalendarClear, IoCube, IoCash, IoCopy } from "react-icons/io5";
+import { IoPeople, IoDocumentText, IoBook, IoDocuments, IoStatsChart, IoCalendarClear, IoCube, IoCash, IoCopy, IoCreateOutline, IoLogOutOutline, IoPerson } from "react-icons/io5";
 import { useAuth } from "@/features/authentication/AuthContext";
 
 interface SidebarProps {
@@ -33,6 +33,16 @@ const Sidebar = ({ activeItem }: SidebarProps) => {
   const { user, logout, isModerator, activeMembership } = useAuth();
   const isSystemAdmin = user?.role === "admin";
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const profileMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const closeOutside = (event: MouseEvent) => {
+      if (profileMenuRef.current && !profileMenuRef.current.contains(event.target as Node)) setProfileMenuOpen(false);
+    };
+    document.addEventListener("mousedown", closeOutside);
+    return () => document.removeEventListener("mousedown", closeOutside);
+  }, []);
 
   const memberships = activeMembership ? [activeMembership] : [];
   const contractedModules = new Set(memberships.flatMap((m) => m.modulos_contratados || []) || []);
@@ -50,6 +60,9 @@ const Sidebar = ({ activeItem }: SidebarProps) => {
     label: item.code === "eventos" ? "Eventos y proyectos" : item.label,
   }));
   const visibleMenuItems = isSystemAdmin ? menuItems : roleItems.filter((item) => contractedModules.has(item.code));
+  const displayName = [user?.perfil?.nombres || user?.first_name, user?.perfil?.apellidos || user?.last_name]
+    .filter(Boolean).join(" ") || user?.email || "Usuario";
+  const roleName = user?.role === "admin" ? "Administrador" : isModerator ? "Moderador" : "Habitante";
 
   const copyToClipboard = async (code: string) => {
     try {
@@ -118,16 +131,16 @@ const Sidebar = ({ activeItem }: SidebarProps) => {
         ))}
       </nav>
 
-      <div className="mt-auto bg-[#dff1ff] text-[#0a496a] rounded-[24px] p-4 text-center">
-        <strong>{user?.perfil?.nombres || user?.email || "Usuario"}</strong>
-        <br />
-        {user?.role === "admin" ? "Administrador" : isModerator ? "Moderador" : "Habitante"}
-        <button
-          type="button"
-          onClick={logout}
-          className="mt-3 w-full rounded-lg border border-[#0a496a] bg-transparent px-3 py-2 text-sm font-semibold hover:bg-[#0a496a] hover:text-white"
-        >
-          Cerrar sesión
+      <div ref={profileMenuRef} className="relative mt-auto">
+        {profileMenuOpen && <div className="absolute bottom-[58px] right-0 z-30 w-[168px] overflow-hidden rounded-t-xl bg-[#dff1ff] py-2 text-[#0a496a] shadow-xl">
+          <Link href="/perfil" onClick={() => setProfileMenuOpen(false)} className="flex items-center gap-2 px-4 py-3 font-bold hover:bg-white/70"><IoCreateOutline className="text-xl" />Editar Perfil</Link>
+          <button type="button" onClick={logout} className="flex w-full items-center gap-2 px-4 py-3 text-left font-bold hover:bg-white/70"><IoLogOutOutline className="text-xl" />Cerrar sesión</button>
+        </div>}
+        <button type="button" aria-expanded={profileMenuOpen} onClick={() => setProfileMenuOpen(open => !open)} className="flex w-full items-center gap-3 rounded-[24px] bg-[#dff1ff] p-3 text-left text-[#0a496a] shadow transition hover:bg-white">
+          <span className="grid h-14 w-14 shrink-0 place-items-center overflow-hidden rounded-full border-[3px] border-[#0a496a] bg-sky-100 text-3xl">
+            {user?.perfil?.avatar ? <img src={user.perfil.avatar} alt={`Foto de ${displayName}`} className="h-full w-full object-cover" /> : <IoPerson />}
+          </span>
+          <span className="min-w-0"><strong className="block truncate text-base leading-tight">{displayName}</strong><span className={`mt-1 inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs text-slate-900 ${isModerator ? "bg-[#aebcff]" : "bg-[#ffd9a3]"}`}><span className={`h-2 w-2 rounded-full ${isModerator ? "bg-[#4b70a6]" : "bg-amber-400"}`} />{roleName}</span></span>
         </button>
       </div>
     </aside>

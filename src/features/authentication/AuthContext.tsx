@@ -18,6 +18,7 @@ interface AuthContextType {
   register: (credentials: RegisterRequest) => Promise<void>;
   logout: () => void;
   refreshToken: () => Promise<void>;
+  reloadUser: () => Promise<void>;
   selectPrivate: (membership: Membership) => void;
 }
 
@@ -195,6 +196,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const reloadUser = async () => {
+    if (!token) return;
+    const currentUser = await fetchApi<User & { perfil?: Perfil }>('/api/usuarios/me/', {
+      headers: { 'Authorization': `Bearer ${token}` },
+    });
+    setUser(currentUser);
+    setPerfil(currentUser.perfil || null);
+    localStorage.setItem(USER_KEY, JSON.stringify(currentUser));
+    if (currentUser.perfil) localStorage.setItem(PERFIL_KEY, JSON.stringify(currentUser.perfil));
+  };
+
   const selectPrivate = (membership: Membership) => {
     setActiveMembership(membership);
     localStorage.setItem(ACTIVE_MEMBERSHIP_KEY, JSON.stringify(membership));
@@ -213,6 +225,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     register,
     logout,
     refreshToken,
+    reloadUser,
     selectPrivate,
   };
 

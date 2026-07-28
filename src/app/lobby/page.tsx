@@ -13,6 +13,7 @@ export default function LobbyPage() {
   const { token, user, isAuthenticated, isLoading, logout, selectPrivate } = useAuth();
   const router = useRouter();
   const [memberships, setMemberships] = useState<Membership[]>([]);
+  const [inactivePrivate, setInactivePrivate] = useState<Membership | null>(null);
   const [systemModules, setSystemModules] = useState<ModuloSistema[]>([]);
   const [selectedModules, setSelectedModules] = useState<string[]>([]);
   const [code, setCode] = useState("");
@@ -74,6 +75,10 @@ export default function LobbyPage() {
   };
 
   const enterPrivate = (membership: Membership) => {
+    if (membership.status === "suspendido") {
+      setInactivePrivate(membership);
+      return;
+    }
     selectPrivate(membership);
     router.push(membership.rol === "moderador" ? "/admin/pagos" : "/pagos");
   };
@@ -93,7 +98,7 @@ export default function LobbyPage() {
       <section className="mx-auto mt-8 max-w-5xl">
         <h2 className="text-3xl font-extrabold text-[#0a496a]">Tus privadas</h2>
         {memberships.length > 0 && <div className="mt-4 grid gap-3 sm:grid-cols-2">
-          {memberships.map((membership) => <button type="button" onClick={() => enterPrivate(membership)} key={membership.id} className="group rounded-xl bg-white p-5 text-left shadow transition hover:-translate-y-1 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-[#0a496a]">
+          {memberships.map((membership) => <button type="button" onClick={() => enterPrivate(membership)} key={membership.id} className={`group rounded-xl p-5 text-left shadow transition hover:-translate-y-1 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-[#0a496a] ${membership.status === "suspendido" ? "border-2 border-red-300 bg-red-50" : "bg-white"}`}>
             <div className="flex items-start justify-between gap-4">
               <div>
             <h3 className="font-bold">{membership.privada_nombre}</h3>
@@ -103,6 +108,7 @@ export default function LobbyPage() {
               <IoArrowForward className="mt-2 text-2xl text-[#0a496a] transition group-hover:translate-x-1" />
             </div>
             <p className="mt-4 text-sm font-semibold text-[#0a496a]">Entrar a la privada</p>
+            {membership.status === "suspendido" && <p className="mt-2 font-bold text-red-600">Cuenta inactiva</p>}
           </button>)}
         </div>}
 
@@ -144,6 +150,7 @@ export default function LobbyPage() {
         {notice && <p className="mt-5 rounded-lg bg-green-100 p-3 text-center text-green-800">{notice}</p>}
         {error && <p className="mt-5 rounded-lg bg-red-100 p-3 text-center text-red-800">{error}</p>}
       </section>
+      {inactivePrivate && <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/50 p-4" onMouseDown={() => setInactivePrivate(null)}><div className="max-w-md rounded-3xl bg-white p-8 text-center shadow-2xl" onMouseDown={(e) => e.stopPropagation()}><div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-red-100 text-3xl">!</div><h2 className="mt-4 text-2xl font-bold text-[#0a496a]">Cuenta inactiva</h2><p className="mt-4 text-slate-600">Tu cuenta ha sido desactivada en <strong>{inactivePrivate.privada_nombre}</strong>. Por favor, contacta a un moderador de la privada para solicitar su reactivación.</p><button onClick={() => setInactivePrivate(null)} className="mt-7 w-full rounded-xl bg-[#0a496a] p-3 font-bold text-white">Entendido</button></div></div>}
     </main>
   );
 }
