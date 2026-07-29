@@ -74,7 +74,7 @@ export default function NewObjectModal({ isOpen, onClose, onCreate }: NewObjectM
 
   return (
     <div
-      className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-4"
+      className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-3 sm:p-4"
       role="presentation"
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) closeModal();
@@ -82,23 +82,23 @@ export default function NewObjectModal({ isOpen, onClose, onCreate }: NewObjectM
     >
       <form
         onSubmit={handleSubmit}
-        className="relative w-full max-w-[402px] rounded-2xl border-4 border-[#0a5a84] bg-[#f4f7fb] p-4 text-[#344054] shadow-2xl"
+        className="relative max-h-[90vh] w-full max-w-[402px] overflow-y-auto rounded-2xl border-4 border-[#0a5a84] bg-[#f4f7fb] p-4 text-[#344054] shadow-2xl"
         aria-labelledby="new-object-title"
       >
         <button
           type="button"
           onClick={closeModal}
-          className="absolute right-4 top-3 text-2xl leading-none text-[#98a2b3] hover:text-[#475467]"
+          className="absolute right-3 top-3 text-2xl leading-none text-[#98a2b3] hover:text-[#475467]"
           aria-label="Cerrar formulario"
         >
           <IoClose />
         </button>
 
-        <h2 id="new-object-title" className="mb-4 text-[31px] font-medium leading-none text-[#075277]">
+        <h2 id="new-object-title" className="mb-4 text-2xl font-medium leading-none text-[#075277] sm:text-[31px]">
           Crear objeto
         </h2>
 
-        <div className="mb-3 flex items-center gap-2">
+        <div className="mb-3 flex flex-wrap items-center gap-2">
           <label htmlFor="object-type" className="text-sm font-bold">
             Tipo <span className="text-red-500">*</span>
           </label>
@@ -106,7 +106,7 @@ export default function NewObjectModal({ isOpen, onClose, onCreate }: NewObjectM
             id="object-type"
             value={form.type}
             onChange={(event) => updateField("type", event.target.value)}
-            className="h-11 rounded-lg border-0 bg-white px-3 text-sm text-gray-600 shadow-md outline-none ring-1 ring-gray-200 focus:ring-2 focus:ring-[#0a5a84]"
+            className="h-11 flex-1 min-w-[120px] rounded-lg border-0 bg-white px-3 text-sm text-gray-600 shadow-md outline-none ring-1 ring-gray-200 focus:ring-2 focus:ring-[#0a5a84]"
           >
             <option value="lost">Extraviado</option>
             <option value="found">Resguardado</option>
@@ -148,13 +148,13 @@ export default function NewObjectModal({ isOpen, onClose, onCreate }: NewObjectM
         />
 
         <span className="mb-2 block text-sm font-bold">Imagen</span>
-        <label className="mb-5 grid h-44 cursor-pointer place-items-center overflow-hidden rounded-[30px] bg-white hover:bg-gray-50">
+        <label className="mb-5 grid h-36 sm:h-44 cursor-pointer place-items-center overflow-hidden rounded-[30px] bg-white hover:bg-gray-50">
           <input type="file" accept="image/*" className="sr-only" onChange={handleImageChange} />
           {form.image ? (
             <img src={form.image} alt="Vista previa del objeto" className="h-full w-full object-contain" />
           ) : (
             <span className="grid place-items-center gap-2 text-gray-300">
-              <IoImageOutline size={72} />
+              <IoImageOutline className="text-5xl sm:text-6xl" />
               <span className="text-xs">Seleccionar imagen</span>
             </span>
           )}
@@ -162,11 +162,11 @@ export default function NewObjectModal({ isOpen, onClose, onCreate }: NewObjectM
 
         {error && <p className="mb-3 text-sm text-red-600">{error}</p>}
 
-        <div className="flex justify-center gap-4">
-          <button type="button" onClick={closeModal} className="rounded-full border border-black bg-white px-6 py-1 text-xl font-semibold text-[#075277]">
+        <div className="flex flex-col-reverse justify-center gap-3 sm:flex-row sm:gap-4">
+          <button type="button" onClick={closeModal} className="w-full rounded-full border border-black bg-white px-6 py-1.5 text-lg font-semibold text-[#075277] sm:w-auto sm:text-xl">
             Cancelar
           </button>
-          <button type="submit" className="rounded-full bg-[#075277] px-8 py-1 text-xl font-semibold text-white shadow hover:bg-[#064665]">
+          <button type="submit" className="w-full rounded-full bg-[#075277] px-8 py-1.5 text-lg font-semibold text-white shadow hover:bg-[#064665] sm:w-auto sm:text-xl">
             Crear
           </button>
         </div>
