@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { IoPeople, IoDocumentText, IoBook, IoDocuments, IoStatsChart, IoCalendarClear, IoCube, IoCash, IoCopy, IoCreateOutline, IoLogOutOutline, IoPerson } from "react-icons/io5";
+import { IoPeople, IoDocumentText, IoBook, IoDocuments, IoClipboard, IoCalendarClear, IoCube, IoCash, IoCopy, IoCreateOutline, IoLogOutOutline, IoPerson, IoChevronDown, IoSettingsOutline, IoSwapHorizontal } from "react-icons/io5";
 import { useAuth } from "@/features/authentication/AuthContext";
 
 interface SidebarProps {
@@ -22,7 +22,7 @@ const menuItems: MenuItem[] = [
   { code: "reportes", label: "Reportes", icon: <IoDocumentText className="h-6 w-6 shrink-0" />, href: "/admin/reportes" },
   { code: "reservaciones", label: "Reservaciones", icon: <IoBook className="h-6 w-6 shrink-0" />, href: "/admin/reservaciones" },
   { code: "directorio", label: "Directorio", icon: <IoDocuments className="h-6 w-6 shrink-0" />, href: "/admin/directorio" },
-  { code: "encuestas", label: "Encuestas", icon: <IoStatsChart className="h-6 w-6 shrink-0" />, href: "/admin/encuestas" },
+  { code: "minutas", label: "Minutas", icon: <IoClipboard className="h-6 w-6 shrink-0" />, href: "/admin/minutas" },
   { code: "eventos", label: "Eventos", icon: <IoCalendarClear className="h-6 w-6 shrink-0" />, href: "/admin/eventos" },
   { code: "objetos-perdidos", label: "Objetos Perdidos", icon: <IoCube className="h-6 w-6 shrink-0" />, href: "/admin/objetos-perdidos" },
   { code: "pagos", label: "Pagos", icon: <IoCash className="h-6 w-6 shrink-0" />, href: "/admin/pagos" },
@@ -34,11 +34,14 @@ const Sidebar = ({ activeItem }: SidebarProps) => {
   const isSystemAdmin = user?.role === "admin";
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const [privateMenuOpen, setPrivateMenuOpen] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement>(null);
+  const privateMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const closeOutside = (event: MouseEvent) => {
       if (profileMenuRef.current && !profileMenuRef.current.contains(event.target as Node)) setProfileMenuOpen(false);
+      if (privateMenuRef.current && !privateMenuRef.current.contains(event.target as Node)) setPrivateMenuOpen(false);
     };
     document.addEventListener("mousedown", closeOutside);
     return () => document.removeEventListener("mousedown", closeOutside);
@@ -53,8 +56,9 @@ const Sidebar = ({ activeItem }: SidebarProps) => {
     eventos: "/eventos-proyectos",
     "objetos-perdidos": "/objetos-perdidos",
     pagos: "/pagos",
+    minutas: "/minutas",
   };
-  const roleItems = isModerator ? menuItems : menuItems.filter((item) => !["usuarios", "encuestas"].includes(item.code)).map((item) => ({
+  const roleItems = isModerator ? menuItems : menuItems.filter((item) => item.code !== "usuarios").map((item) => ({
     ...item,
     href: habitanteRoutes[item.code] || "/lobby",
     label: item.code === "eventos" ? "Eventos y proyectos" : item.label,
@@ -80,7 +84,7 @@ const Sidebar = ({ activeItem }: SidebarProps) => {
   };
 
   return (
-    <aside className="w-[280px] bg-[#0a496a] text-white m-5 rounded-[30px] p-5 flex flex-col min-h-[95vh] shadow-lg">
+    <aside className="sticky top-5 m-5 flex h-[calc(100vh-2.5rem)] w-[280px] shrink-0 self-start flex-col overflow-hidden rounded-[30px] bg-[#0a496a] p-5 text-white shadow-lg">
       <Link
         href="/lobby"
         aria-label="Ir al lobby para cambiar de privada"
@@ -90,31 +94,18 @@ const Sidebar = ({ activeItem }: SidebarProps) => {
         COMUNIDAD CONECTADA
       </Link>
 
-      {!isSystemAdmin && memberships.map((m) => (
-        <div key={m.id} className="mt-3 rounded-xl bg-white/10 p-3 text-center text-sm">
-          <p className="text-xs opacity-70">{m.privada_nombre}</p>
-          <div className="mt-1 flex items-center justify-center gap-2">
-            <code className="rounded bg-white/20 px-2 py-0.5 font-mono text-base tracking-wider">{m.privada_codigo}</code>
-            <button
-              type="button"
-              onClick={() => copyToClipboard(m.privada_codigo)}
-              className="rounded p-1 hover:bg-white/20 transition-colors"
-              title="Copiar código"
-            >
-              <IoCopy className="h-4 w-4" />
-            </button>
-          </div>
-          {copiedCode === m.privada_codigo && <p className="mt-1 text-xs text-green-300">¡Copiado!</p>}
-        </div>
-      ))}
+      {!isSystemAdmin && activeMembership && <div ref={privateMenuRef} className="relative mt-3">
+        <button type="button" onClick={() => setPrivateMenuOpen(v => !v)} className="flex w-full items-center justify-between rounded-xl bg-white/10 p-3 text-left hover:bg-white/15">
+          <span className="min-w-0"><span className="block text-[11px] uppercase tracking-wide opacity-70">Privada seleccionada</span><strong className="block truncate">{activeMembership.privada_nombre}</strong></span><IoChevronDown className={`shrink-0 transition ${privateMenuOpen ? "rotate-180" : ""}`}/>
+        </button>
+        {privateMenuOpen && <div className="absolute left-0 right-0 top-full z-40 mt-2 overflow-hidden rounded-xl bg-[#dff1ff] py-2 text-[#0a496a] shadow-xl">
+          <Link href="/configuracion-privada" onClick={() => setPrivateMenuOpen(false)} className="flex items-center gap-2 px-4 py-3 font-semibold hover:bg-white"><IoSettingsOutline/> Información y reglamento</Link>
+          <button type="button" onClick={() => copyToClipboard(activeMembership.privada_codigo)} className="flex w-full items-center gap-2 px-4 py-3 text-left font-semibold hover:bg-white"><IoCopy/> {copiedCode === activeMembership.privada_codigo ? "Código copiado" : "Copiar código"}</button>
+          <Link href="/lobby" onClick={() => setPrivateMenuOpen(false)} className="flex items-center gap-2 border-t border-sky-200 px-4 py-3 font-semibold hover:bg-white"><IoSwapHorizontal/> Cambiar de privada</Link>
+        </div>}
+      </div>}
 
-      {!isSystemAdmin && activeMembership && (
-        <Link href="/lobby" className="mt-3 rounded-lg border border-white/40 px-3 py-2 text-center text-sm font-semibold hover:bg-white/10">
-          Cambiar de privada
-        </Link>
-      )}
-
-      <nav className="mt-6 flex flex-col gap-2">
+      <nav className="mt-6 flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto pr-1">
         {isSystemAdmin && <Link href="/admin-comunidad" className="mb-3 flex items-center justify-center rounded-xl bg-[#c1e1c1] px-4 py-3 font-semibold text-[#234b31]">Administración global</Link>}
         {visibleMenuItems.map((item) => (
           <Link
@@ -131,7 +122,7 @@ const Sidebar = ({ activeItem }: SidebarProps) => {
         ))}
       </nav>
 
-      <div ref={profileMenuRef} className="relative mt-auto">
+      <div ref={profileMenuRef} className="relative mt-3 shrink-0">
         {profileMenuOpen && <div className="absolute bottom-[58px] right-0 z-30 w-[168px] overflow-hidden rounded-t-xl bg-[#dff1ff] py-2 text-[#0a496a] shadow-xl">
           <Link href="/perfil" onClick={() => setProfileMenuOpen(false)} className="flex items-center gap-2 px-4 py-3 font-bold hover:bg-white/70"><IoCreateOutline className="text-xl" />Editar Perfil</Link>
           <button type="button" onClick={logout} className="flex w-full items-center gap-2 px-4 py-3 text-left font-bold hover:bg-white/70"><IoLogOutOutline className="text-xl" />Cerrar sesión</button>

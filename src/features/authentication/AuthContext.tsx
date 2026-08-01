@@ -203,6 +203,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
     setUser(currentUser);
     setPerfil(currentUser.perfil || null);
+    if (activeMembership) {
+      const currentMembership = currentUser.membresias?.find((membership) => membership.privada === activeMembership.privada) || null;
+      setActiveMembership(currentMembership);
+      if (currentMembership) localStorage.setItem(ACTIVE_MEMBERSHIP_KEY, JSON.stringify(currentMembership));
+      else localStorage.removeItem(ACTIVE_MEMBERSHIP_KEY);
+    }
     localStorage.setItem(USER_KEY, JSON.stringify(currentUser));
     if (currentUser.perfil) localStorage.setItem(PERFIL_KEY, JSON.stringify(currentUser.perfil));
   };
