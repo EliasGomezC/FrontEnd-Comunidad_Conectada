@@ -1,8 +1,8 @@
 export interface Reservacion {
-  id: number;
+  id: string;
   folio: number;
-  area: number;
-  usuario?: number;
+  area: string;
+  usuario?: string;
   fecha: string;
   hora_inicio: string;
   hora_fin: string;
@@ -12,7 +12,7 @@ export interface Reservacion {
 }
 
 export interface ReservacionFilter {
-  area?: number;
+  area?: string;
   fecha?: string;
   estado?: 'pendiente' | 'aprobada' | 'cancelada';
   search?: string;

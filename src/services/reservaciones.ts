@@ -14,17 +14,17 @@ export function createReservacion(token: string, data: ReservacionPayload) {
   return fetchApiAuth<Reservacion>('/api/reservaciones/', token, { method: 'POST', body: JSON.stringify(data) });
 }
 
-export function updateReservacion(token: string, id: number, data: Partial<ReservacionPayload>) {
+export function updateReservacion(token: string, id: string, data: Partial<ReservacionPayload>) {
   return fetchApiAuth<Reservacion>(`/api/reservaciones/${id}/`, token, { method: 'PATCH', body: JSON.stringify(data) });
 }
 
-export function deleteReservacion(token: string, id: number) {
+export function deleteReservacion(token: string, id: string) {
   return fetchApiAuth<void>(`/api/reservaciones/${id}/`, token, { method: 'DELETE' });
 }
 
 export async function getReservacionById(
   token: string,
-  id: number
+  id: string
 ): Promise<Reservacion> {
   return fetchApiAuth<Reservacion>(`/api/reservaciones/${id}/`, token);
 }

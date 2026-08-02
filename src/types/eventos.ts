@@ -1,6 +1,6 @@
 export interface Evento {
-  id: number;
-  privada: number;
+  id: string;
+  privada: string;
   titulo: string;
   descripcion?: string;
   fecha_inicio: string;
@@ -14,7 +14,7 @@ export interface Evento {
 }
 
 export interface EventoFilter {
-  privada?: number;
+  privada?: string;
   search?: string;
   page?: number;
 }

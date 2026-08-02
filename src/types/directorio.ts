@@ -1,6 +1,6 @@
 export interface DirectorioContacto {
-  id: number;
-  privada: number;
+  id: string;
+  privada: string;
   nombre: string;
   categorias: string;
   num_tel: string;
@@ -12,7 +12,7 @@ export interface DirectorioContacto {
 }
 
 export interface DirectorioFilter {
-  privada?: number;
+  privada?: string;
   categorias?: string;
   search?: string;
   page?: number;

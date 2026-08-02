@@ -22,17 +22,17 @@ export function createContacto(token: string, data: DirectorioPayload) {
   return fetchApiAuth<DirectorioContacto>('/api/directorio/', token, { method: 'POST', body: toFormData(data) });
 }
 
-export function updateContacto(token: string, id: number, data: Partial<DirectorioPayload>) {
+export function updateContacto(token: string, id: string, data: Partial<DirectorioPayload>) {
   return fetchApiAuth<DirectorioContacto>(`/api/directorio/${id}/`, token, { method: 'PATCH', body: toFormData(data) });
 }
 
-export function deleteContacto(token: string, id: number) {
+export function deleteContacto(token: string, id: string) {
   return fetchApiAuth<void>(`/api/directorio/${id}/`, token, { method: 'DELETE' });
 }
 
 export async function getContactoById(
   token: string,
-  id: number
+  id: string
 ): Promise<DirectorioContacto> {
   return fetchApiAuth<DirectorioContacto>(`/api/directorio/${id}/`, token);
 }

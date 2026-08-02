@@ -19,10 +19,10 @@ export function createEvento(token: string, data: EventoPayload) {
   return fetchApiAuth<Evento>('/api/eventos/', token, { method: 'POST', body: toFormData(data) });
 }
 
-export function updateEvento(token: string, id: number, data: Partial<EventoPayload>) {
+export function updateEvento(token: string, id: string, data: Partial<EventoPayload>) {
   return fetchApiAuth<Evento>(`/api/eventos/${id}/`, token, { method: 'PATCH', body: toFormData(data) });
 }
 
-export function deleteEvento(token: string, id: number) {
+export function deleteEvento(token: string, id: string) {
   return fetchApiAuth<void>(`/api/eventos/${id}/`, token, { method: 'DELETE' });
 }

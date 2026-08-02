@@ -1,6 +1,6 @@
 export interface Area {
-  id: number;
-  privada: number;
+  id: string;
+  privada: string;
   codigo: string;
   nombre: string;
   descripcion?: string;
@@ -10,7 +10,7 @@ export interface Area {
 }
 
 export interface AreaFilter {
-  privada?: number;
+  privada?: string;
   search?: string;
 }
 
