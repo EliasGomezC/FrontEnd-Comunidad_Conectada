@@ -1,6 +1,6 @@
 import { fetchApiAuth } from '@/lib/api';
 import { buildQueryString } from '@/lib/utils';
-import { Cuota, CuotaFilter, CuotasResponse } from '@/types/cuotas';
+import { CrearCuotaRequest, Cuota, CuotaFilter, CuotaResumen, CuotasResponse } from '@/types/cuotas';
 
 export async function getCuotas(
   token: string,
@@ -12,7 +12,15 @@ export async function getCuotas(
 
 export async function getCuotaById(
   token: string,
-  id: number
+  id: string
 ): Promise<Cuota> {
   return fetchApiAuth<Cuota>(`/api/cuotas/${id}/`, token);
+}
+
+export async function crearCuota(token: string, payload: CrearCuotaRequest): Promise<Cuota> {
+  return fetchApiAuth<Cuota>('/api/cuotas/', token, { method: 'POST', body: JSON.stringify(payload) });
+}
+
+export async function getResumenCuota(token: string, id: string): Promise<CuotaResumen> {
+  return fetchApiAuth<CuotaResumen>(`/api/cuotas/${id}/resumen/`, token);
 }

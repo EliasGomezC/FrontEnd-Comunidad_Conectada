@@ -17,9 +17,23 @@ export async function getUsuarios(
 
 export async function getUsuarioById(
   token: string,
-  id: number
+  id: string
 ): Promise<Usuario> {
   return fetchApiAuth<Usuario>(`/api/usuarios/${id}/`, token);
+}
+
+export async function agregarUsuarioPrivada(token: string, privada: string, data: { email: string; rol: 'moderador' | 'habitante' }) {
+  return fetchApiAuth(`/api/privadas/${privada}/miembros/`, token, { method: 'POST', body: JSON.stringify(data) });
+}
+
+export async function editarUsuarioPrivada(token: string, privada: string, usuario: string, data: { rol: 'moderador' | 'habitante'; status: 'activo' | 'suspendido' }) {
+  return fetchApiAuth(`/api/privadas/${privada}/miembros/${usuario}/`, token, { method: 'PATCH', body: JSON.stringify(data) });
+}
+
+export async function actualizarAvatarUsuario(token: string, privada: string, usuario: string, archivo: File) {
+  const body = new FormData();
+  body.append('avatar', archivo);
+  return fetchApiAuth<{ avatar: string }>(`/api/privadas/${privada}/miembros/${usuario}/`, token, { method: 'POST', body });
 }
 
 export async function getPerfiles(

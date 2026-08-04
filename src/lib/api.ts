@@ -1,5 +1,16 @@
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
 
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    public readonly status: number,
+    public readonly data: Record<string, unknown> = {},
+  ) {
+    super(message);
+    this.name = 'ApiError';
+  }
+}
+
 export function getApiUrl(endpoint: string): string {
   return `${API_BASE_URL}${endpoint}`;
 }
@@ -9,7 +20,7 @@ export async function fetchApi<T>(
   options: RequestInit = {}
 ): Promise<T> {
   const url = getApiUrl(endpoint);
-  
+
   const isFormData = typeof FormData !== 'undefined' && options.body instanceof FormData;
   const config: RequestInit = {
     ...options,
@@ -23,7 +34,6 @@ export async function fetchApi<T>(
   try {
     response = await fetch(url, config);
   } catch (fetchError) {
-    console.error('Fetch error:', fetchError);
     if (fetchError instanceof TypeError) {
       throw new Error(
         'No se pudo conectar al backend. Verifica que:\n' +
@@ -34,7 +44,7 @@ export async function fetchApi<T>(
     }
     throw fetchError;
   }
-  
+
   if (!response.ok) {
     const responseText = await response.text();
     let errorData: Record<string, unknown> = {};
@@ -50,13 +60,6 @@ export async function fetchApi<T>(
       // La respuesta puede ser HTML o estar vacía (por ejemplo, un proxy).
     }
 
-    console.error('API Error Response:', {
-      status: response.status,
-      statusText: response.statusText,
-      data: errorData,
-      body: responseText || '(respuesta vacía)',
-    });
-
     const nonFieldErrors = errorData.non_field_errors;
     const errorMessage =
       (typeof errorData.detail === 'string' && errorData.detail) ||
@@ -65,7 +68,7 @@ export async function fetchApi<T>(
       (Object.keys(errorData).length > 0 ? JSON.stringify(errorData) : '') ||
       `Error ${response.status}: ${response.statusText || 'Error en la petición'}`;
 
-    throw new Error(errorMessage);
+    throw new ApiError(errorMessage, response.status, errorData);
   }
 
   if (response.status === 204) return undefined as T;

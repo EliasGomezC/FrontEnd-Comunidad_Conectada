@@ -1,131 +1,45 @@
 "use client";
-
-import { useEffect, useState, useMemo } from "react";
-import { useAuth } from "@/features/authentication/AuthContext";
-import { getReportes } from "@/services/reportes";
-import { Reporte } from "@/types/reportes";
+import {FormEvent,useCallback,useEffect,useMemo,useState} from "react";
+import {IoAdd,IoClose,IoDocumentTextOutline,IoWarningOutline} from "react-icons/io5";
 import Sidebar from "@/components/Sidebar";
 import SearchBar from "@/components/SearchBar";
-import { IoDocumentText, IoDownloadOutline } from "react-icons/io5";
+import {useAuth} from "@/features/authentication/AuthContext";
+import {concluirReporte,crearReporte,editarReporte,getIncidentesReportes,getReportes,getTiposReporte} from "@/services/reportes";
+import type {IncidenteReporte as Incidente,PrioridadReporte,Reporte,TipoReporte} from "@/types/reportes";
 
-const estadoMap: Record<string, "Generado" | "Pendiente" | "Programado"> = {
-  pendiente: "Pendiente",
-  en_proceso: "Programado",
-  resuelto: "Generado",
-  cerrado: "Generado",
-};
+const fmt=(v:string)=>new Intl.DateTimeFormat('es-MX',{dateStyle:'medium',timeStyle:'short'}).format(new Date(v));
+const priority:Record<PrioridadReporte,string>={baja:'bg-green-200 text-green-800',media:'bg-amber-200 text-amber-800',alta:'bg-red-200 text-red-800'};
+const states:Record<string,string>={pendiente:'Pendiente',en_proceso:'En proceso',resuelto:'Resuelto',concluido:'Concluido'};
+export default function ReportesAdmin(){
+ const{token,activeMembership}=useAuth();const[tab,setTab]=useState<'incidentes'|'reportes'>('incidentes');const[incidents,setIncidents]=useState<Incidente[]>([]);const[reports,setReports]=useState<Reporte[]>([]);const[types,setTypes]=useState<TipoReporte[]>([]);const[search,setSearch]=useState('');const[loading,setLoading]=useState(true);const[error,setError]=useState('');const[selectedIncident,setSelectedIncident]=useState<Incidente|null>(null);const[selectedReport,setSelectedReport]=useState<Reporte|null>(null);const[reportIncident,setReportIncident]=useState<Incidente|null>(null);const[editingReport,setEditingReport]=useState<Reporte|null>(null);
+ const load=useCallback(async()=>{if(!token||!activeMembership)return;setLoading(true);try{const[i,r,t]=await Promise.all([getIncidentesReportes(token,{privada:activeMembership.privada,search:search||undefined}),getReportes(token,{privada:activeMembership.privada,search:search||undefined}),getTiposReporte(token)]);setIncidents(i.results);setReports(r.results);setTypes(t);setError('')}catch(e){setError(e instanceof Error?e.message:'No se pudo cargar el módulo.')}finally{setLoading(false)}},[token,activeMembership,search]);
+ // eslint-disable-next-line react-hooks/set-state-in-effect
+ useEffect(()=>{void load()},[load]);
+ const pending=incidents;
+ return <div className="flex min-h-screen bg-[#dfe5eb]"><Sidebar activeItem="Reportes"/><main className="min-w-0 flex-1 p-8 text-[#0a496a]"><div className="flex flex-wrap items-end justify-between gap-5"><div><h1 className="text-4xl font-extrabold">Reportes e Incidentes</h1><p className="text-xl">Seguimiento de sucesos de la comunidad</p></div><button disabled={!pending.length} onClick={()=>setReportIncident(pending[0]||null)} className="flex items-center gap-2 rounded-xl bg-[#075574] px-6 py-4 font-bold text-white disabled:cursor-not-allowed disabled:opacity-40"><IoAdd/> Nuevo reporte</button></div><div className="mt-7 flex flex-wrap gap-4"><SearchBar value={search} onChange={e=>setSearch(e.target.value)} placeholder="Buscar por título, descripción o usuario" className="min-w-80 flex-1"/><button onClick={()=>setTab('incidentes')} className={`flex items-center gap-2 rounded-xl px-5 py-3 font-bold ${tab==='incidentes'?'bg-sky-300':'bg-white'}`}><IoWarningOutline/> Incidentes ({incidents.length})</button><button onClick={()=>setTab('reportes')} className={`flex items-center gap-2 rounded-xl px-5 py-3 font-bold ${tab==='reportes'?'bg-sky-300':'bg-white'}`}><IoDocumentTextOutline/> Reportes ({reports.length})</button></div>{error&&<p className="mt-5 rounded-xl bg-red-100 p-4 text-red-700">{error}</p>}{loading&&<p className="py-16 text-center text-xl">Cargando…</p>}
+ {!loading&&tab==='incidentes'&&<div className="mt-7 grid gap-5 xl:grid-cols-2">{incidents.map(i=><button key={i.id} onClick={()=>setSelectedIncident(i)} className="overflow-hidden rounded-2xl bg-white text-left shadow transition hover:-translate-y-1"><div className="flex min-h-60"><div className="flex-1 p-5"><div className="flex justify-between gap-2"><h2 className="text-xl font-bold">#{i.num} · {i.titulo}</h2><span className="h-fit rounded-lg bg-slate-200 px-3 py-1">{states[i.estado]}</span></div><div className="mt-3 flex gap-2"><span className={`rounded-lg px-3 py-1 capitalize ${priority[i.prioridad]}`}>Prioridad {i.prioridad}</span><span className="rounded-lg bg-sky-100 px-3 py-1">{i.tipo_detalle?.nombre}</span></div><p className="mt-4 line-clamp-2 text-slate-600">{i.descripcion}</p><p className="mt-3 text-sm"><b>Habitante:</b> {i.habitante.nombre}<br/><b>Suceso:</b> {fmt(i.fecha_incidente)}</p><p className={`mt-3 font-bold ${i.tiene_reporte?'text-green-700':'text-amber-700'}`}>{i.tiene_reporte?'Con reporte de seguimiento':'Requiere reporte'}</p></div>{i.evidencia&&<img src={i.evidencia} alt="Evidencia" className="w-52 object-cover"/>}</div></button>)}{!incidents.length&&<p className="col-span-2 rounded-2xl bg-white p-12 text-center">No hay incidentes registrados.</p>}</div>}
+ {!loading&&tab==='reportes'&&<div className="mt-7 grid gap-5 xl:grid-cols-2">{reports.map(r=><button key={r.id} onClick={()=>setSelectedReport(r)} className="overflow-hidden rounded-2xl bg-white text-left shadow transition hover:-translate-y-1"><div className="flex min-h-60"><div className="flex-1 p-5"><div className="flex justify-between gap-2"><h2 className="text-xl font-bold">Reporte #{r.num} · {r.titulo}</h2><span className={`h-fit rounded-lg px-3 py-1 ${r.estado==='concluido'?'bg-green-200':'bg-amber-200'}`}>{states[r.estado]}</span></div><div className="mt-3 flex gap-2"><span className={`rounded-lg px-3 py-1 capitalize ${priority[r.prioridad]}`}>Prioridad {r.prioridad}</span><span className="rounded-lg bg-sky-100 px-3 py-1">{r.tipo_detalle?.nombre}</span></div><p className="mt-4 line-clamp-2 text-slate-600">{r.descripcion}</p><p className="mt-3 text-sm"><b>Incidente:</b> #{r.incidente_detalle.num} {r.incidente_detalle.titulo}<br/><b>Moderador:</b> {r.moderador.nombre}</p></div>{r.evidencia&&<img src={r.evidencia} alt="Evidencia" className="w-52 object-cover"/>}</div></button>)}{!reports.length&&<p className="col-span-2 rounded-2xl bg-white p-12 text-center">Todavía no hay reportes de seguimiento.</p>}</div>}
+ {selectedIncident&&<IncidentDetail incident={selectedIncident} reports={reports.filter(report=>report.incidente===selectedIncident.id)} onClose={()=>setSelectedIncident(null)} onReport={()=>{setReportIncident(selectedIncident);setSelectedIncident(null)}} onViewReport={report=>{setSelectedIncident(null);setSelectedReport(report)}}/>}{reportIncident&&token&&<ReportModal token={token} incident={reportIncident} incidents={pending} types={types} onIncident={setReportIncident} onClose={()=>setReportIncident(null)} onSaved={()=>{setReportIncident(null);void load()}}/>}{selectedReport&&token&&<ReportDetail report={selectedReport} token={token} onClose={()=>setSelectedReport(null)} onConcluded={()=>{setSelectedReport(null);void load()}} onEdit={()=>{setEditingReport(selectedReport);setSelectedReport(null)}} onIncident={()=>{setSelectedReport(null);setSelectedIncident(incidents.find(item=>item.id===selectedReport.incidente)||null)}}/>}{editingReport&&token&&<EditReportModal report={editingReport} token={token} onClose={()=>setEditingReport(null)} onSaved={()=>{setEditingReport(null);void load()}}/>}</main></div>;
+}
 
-const ReportesPage = () => {
-  const { token, logout } = useAuth();
-  const [reportes, setReportes] = useState<Reporte[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState("");
+function IncidentDetail({incident,reports,onClose,onReport,onViewReport}:{incident:Incidente;reports:Reporte[];onClose:()=>void;onReport:()=>void;onViewReport:(report:Reporte)=>void}) {
+ return <Overlay onClose={onClose}><div className="flex justify-between"><div><h2 className="text-3xl font-bold">{incident.titulo}</h2><p>Incidente #{incident.num}</p></div><button onClick={onClose}><IoClose size={30}/></button></div><p className="mt-5">{incident.descripcion}</p><div className="mt-5 grid gap-3 sm:grid-cols-2"><p><b>Habitante:</b> {incident.habitante.nombre}</p><p><b>Teléfono:</b> {incident.habitante.telefono||'Sin teléfono'}</p><p><b>Fecha:</b> {fmt(incident.fecha_incidente)}</p><p><b>Ubicación:</b> {incident.ubicacion}</p></div>{incident.evidencia&&<img src={incident.evidencia} alt="Evidencia" className="mt-5 max-h-96 w-full rounded-2xl object-cover"/>}<section className="mt-5 rounded-2xl bg-slate-100 p-4"><h3 className="text-xl font-bold">Reportes realizados ({reports.length})</h3>{reports.length?<div className="mt-3 space-y-2">{reports.map(report=><button key={report.id} onClick={()=>onViewReport(report)} className="flex w-full items-center justify-between rounded-xl bg-white p-4 text-left shadow-sm hover:bg-sky-50"><span><b>#{report.num} · {report.titulo}</b><small className="mt-1 block">{report.moderador.nombre}</small></span><span className={`rounded-lg px-3 py-1 ${report.estado==='concluido'?'bg-green-200':'bg-amber-200'}`}>{states[report.estado]} →</span></button>)}</div>:<p className="mt-2 text-slate-500">Aún no se han realizado reportes.</p>}</section><div className="mt-6 grid grid-cols-2 gap-3"><button onClick={onClose} className="rounded-xl border p-3 font-bold">Cerrar</button><button onClick={onReport} className="rounded-xl bg-[#0a496a] p-3 font-bold text-white">Realizar nuevo reporte</button></div></Overlay>
+}
 
-  useEffect(() => {
-    if (!token) return;
+function ReportModal({token,incident,incidents,onIncident,onClose,onSaved}:{token:string;incident:Incidente;incidents:Incidente[];types:TipoReporte[];onIncident:(i:Incidente)=>void;onClose:()=>void;onSaved:()=>void}) {
+  const [form,setForm]=useState({titulo:'',descripcion:''});
+  const [file,setFile]=useState<File|null>(null);
+  const [busy,setBusy]=useState(false);
+  const [error,setError]=useState('');
+  const preview=useMemo(()=>file?URL.createObjectURL(file):'', [file]);
+  useEffect(()=>()=>{if(preview)URL.revokeObjectURL(preview)},[preview]);
+  const change=(id:string)=>{const next=incidents.find(item=>item.id===id);if(next){onIncident(next);setForm({titulo:'',descripcion:''});setFile(null)}};
+  const submit=async(event:FormEvent)=>{event.preventDefault();if(!file){setError('Adjunta una evidencia fotográfica para crear el reporte.');return}setBusy(true);setError('');try{await crearReporte(token,{incidente:incident.id,titulo:form.titulo,descripcion:form.descripcion,evidencia:file});onSaved()}catch(reason){setError(reason instanceof Error?reason.message:'No se pudo crear el reporte.')}finally{setBusy(false)}};
+  return <Overlay onClose={onClose}><form onSubmit={submit}><div className="flex justify-between"><div><h2 className="text-2xl font-bold">Nuevo reporte</h2><p className="text-slate-500">Seguimiento formal de un incidente existente.</p></div><button type="button" onClick={onClose}><IoClose size={28}/></button></div><div className="mt-6 grid gap-4"><label className="font-bold">Incidente<select value={incident.id} onChange={event=>change(event.target.value)} className="mt-2 w-full rounded-xl border bg-white p-3 font-normal">{incidents.map(item=><option key={item.id} value={item.id}>#{item.num} · {item.titulo} — {item.habitante.nombre}</option>)}</select></label><label className="font-bold">Título<input required value={form.titulo} onChange={event=>setForm({...form,titulo:event.target.value})} className="mt-2 w-full rounded-xl border p-3 font-normal"/></label><label className="font-bold">Detalles del seguimiento<textarea required minLength={10} value={form.descripcion} onChange={event=>setForm({...form,descripcion:event.target.value})} className="mt-2 min-h-32 w-full rounded-xl border p-3 font-normal"/></label><label className="grid cursor-pointer place-items-center rounded-2xl border-2 border-dashed p-7 text-center">{preview?<img src={preview} alt="Vista previa de la evidencia" className="mb-3 max-h-64 w-full rounded-xl object-contain"/>:<IoDocumentTextOutline size={36}/>}<b>{file?file.name:'Adjuntar evidencia fotográfica'}</b><span className="text-sm text-slate-500">JPG, PNG o WEBP · máximo 8 MB</span><input required type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={event=>setFile(event.target.files?.[0]||null)}/></label></div>{error&&<p className="mt-4 rounded-lg bg-red-100 p-3 text-red-700">{error}</p>}<div className="mt-6 grid grid-cols-2 gap-3"><button type="button" onClick={onClose} className="rounded-xl border p-3 font-bold">Cancelar</button><button disabled={busy} className="rounded-xl bg-[#0a496a] p-3 font-bold text-white disabled:opacity-50">{busy?'Creando…':'Crear reporte'}</button></div></form></Overlay>
+}
 
-    const fetchReportes = async () => {
-      try {
-        setIsLoading(true);
-        const data = await getReportes(token);
-        setReportes(data.results);
-        setError(null);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Error al cargar reportes");
-        if (err instanceof Error && err.message.includes("401")) {
-          logout();
-        }
-      } finally {
-        setIsLoading(false);
-      }
-    };
+function ReportDetail({report,token,onClose,onConcluded,onEdit,onIncident}:{report:Reporte;token:string;onClose:()=>void;onConcluded:()=>void;onEdit:()=>void;onIncident:()=>void}){const[busy,setBusy]=useState(false);const[error,setError]=useState('');const conclude=async()=>{setBusy(true);try{await concluirReporte(token,report.id);onConcluded()}catch(x){setError(x instanceof Error?x.message:'No se pudo concluir.');setBusy(false)}};return <Overlay onClose={onClose}><div className="flex justify-between"><div><h2 className="text-3xl font-bold">{report.titulo}</h2><p>Reporte #{report.num}</p></div><span className={`h-fit rounded-xl px-5 py-2 font-bold ${report.estado==='concluido'?'bg-green-200':'bg-amber-200'}`}>{states[report.estado]}</span></div><div className="mt-5 grid gap-3 sm:grid-cols-3"><p><b>Tipo</b><br/>{report.tipo_detalle?.nombre}</p><p><b>Prioridad</b><br/><span className="capitalize">{report.prioridad}</span></p><p><b>Suceso</b><br/>{fmt(report.fecha_suceso)}</p></div><h3 className="mt-5 text-xl font-bold">Descripción</h3><p className="mt-2">{report.descripcion}</p>{report.evidencia&&<img src={report.evidencia} alt="Evidencia" className="mt-5 max-h-96 w-full rounded-2xl object-cover"/>}<section className="mt-5 rounded-xl bg-slate-100 p-4"><b>Moderador responsable</b><p>{report.moderador.nombre} · {report.moderador.telefono||'Sin teléfono'} · {report.moderador.email}</p></section><button onClick={onIncident} className="mt-4 w-full rounded-xl bg-sky-100 p-4 text-left hover:bg-sky-200"><b>Ver incidente de origen #{report.incidente_detalle.num} →</b><p>{report.incidente_detalle.titulo} — {report.incidente_detalle.habitante.nombre}</p></button>{error&&<p className="mt-4 bg-red-100 p-3 text-red-700">{error}</p>}<div className={`mt-6 grid gap-3 ${report.estado==='concluido'?'grid-cols-2':'grid-cols-3'}`}><button onClick={onClose} className="rounded-xl border p-3 font-bold">Cerrar</button>{report.estado!=='concluido'&&<button onClick={onEdit} className="rounded-xl bg-sky-200 p-3 font-bold">Editar</button>}<button disabled={busy||report.estado==='concluido'} onClick={conclude} className="rounded-xl bg-[#315b78] p-3 font-bold text-white disabled:opacity-40">{report.estado==='concluido'?'Concluido':busy?'Guardando…':'Concluir'}</button></div></Overlay>}
 
-    fetchReportes();
-  }, [token, logout]);
+function EditReportModal({report,token,onClose,onSaved}:{report:Reporte;token:string;onClose:()=>void;onSaved:()=>void}){const[form,setForm]=useState({titulo:report.titulo,descripcion:report.descripcion});const[file,setFile]=useState<File|null>(null);const[busy,setBusy]=useState(false);const[error,setError]=useState('');const preview=useMemo(()=>file?URL.createObjectURL(file):report.evidencia,[file,report.evidencia]);useEffect(()=>()=>{if(preview?.startsWith('blob:'))URL.revokeObjectURL(preview)},[preview]);const submit=async(event:FormEvent)=>{event.preventDefault();setBusy(true);setError('');try{await editarReporte(token,report.id,{...form,evidencia:file});onSaved()}catch(reason){setError(reason instanceof Error?reason.message:'No se pudo editar el reporte.')}finally{setBusy(false)}};return <Overlay onClose={onClose}><form onSubmit={submit}><div className="flex justify-between"><h2 className="text-2xl font-bold">Editar reporte #{report.num}</h2><button type="button" onClick={onClose}><IoClose size={28}/></button></div><div className="mt-6 grid gap-4"><label className="font-bold">Título<input required value={form.titulo} onChange={event=>setForm({...form,titulo:event.target.value})} className="mt-2 w-full rounded-xl border p-3 font-normal"/></label><label className="font-bold">Detalles del seguimiento<textarea required minLength={10} value={form.descripcion} onChange={event=>setForm({...form,descripcion:event.target.value})} className="mt-2 min-h-32 w-full rounded-xl border p-3 font-normal"/></label><label className="grid cursor-pointer place-items-center rounded-2xl border-2 border-dashed p-5 text-center">{preview&&<img src={preview} alt="Vista previa" className="mb-3 max-h-64 w-full rounded-xl object-contain"/>}<b>{file?file.name:'Cambiar evidencia fotográfica (opcional)'}</b><input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={event=>setFile(event.target.files?.[0]||null)}/></label></div>{error&&<p className="mt-4 rounded-lg bg-red-100 p-3 text-red-700">{error}</p>}<div className="mt-6 grid grid-cols-2 gap-3"><button type="button" onClick={onClose} className="rounded-xl border p-3 font-bold">Cancelar</button><button disabled={busy} className="rounded-xl bg-[#0a496a] p-3 font-bold text-white disabled:opacity-50">{busy?'Guardando…':'Guardar cambios'}</button></div></form></Overlay>}
 
-  const filteredReportes = useMemo(() => {
-    if (!searchTerm) return reportes;
-    const term = searchTerm.toLowerCase();
-    return reportes.filter(
-      (reporte) =>
-        reporte.descripcion.toLowerCase().includes(term) ||
-        reporte.tipo.toLowerCase().includes(term) ||
-        reporte.ubicacion?.toLowerCase().includes(term)
-    );
-  }, [reportes, searchTerm]);
-
-  return (
-    <div className="flex min-h-screen bg-[#dfe5eb]">
-      <Sidebar activeItem="Reportes" />
-
-      <main className="flex-1 p-[30px]">
-        <div className="flex justify-between items-center gap-5 flex-wrap mb-8">
-          <div>
-            <h1 className="text-[52px] m-0 text-[#124b70]">Reportes</h1>
-            <SearchBar 
-              placeholder="Buscar reporte..." 
-              className="w-[500px] max-w-full mt-3"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-          <button className="bg-[#0a496a] text-white border-none px-[24px] py-[16px] rounded-[14px] cursor-pointer hover:bg-[#0d5a80]">
-            + Generar Reporte
-          </button>
-        </div>
-
-        {isLoading && (
-          <div className="flex items-center justify-center py-20">
-            <div className="text-[#0a496a] text-xl">Cargando reportes...</div>
-          </div>
-        )}
-
-        {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-            {error}
-          </div>
-        )}
-
-        {!isLoading && !error && (
-          <div className="flex flex-col gap-4 mt-6">
-            {filteredReportes.map((report) => (
-              <div
-                key={report.id}
-                className="bg-white rounded-[20px] p-5 flex justify-between gap-5 items-center shadow-[0_2px_8px_rgba(0,0,0,0.1)]"
-              >
-                <div className="flex-1">
-                  <h2 className="text-xl inline">{report.descripcion}</h2>
-                  <span className="ml-3 px-3 py-1 rounded-[8px] bg-[#c8f0bf] text-[#215d2d] text-sm">
-                    {report.tipo}
-                  </span>
-                  <p className="mt-2 text-sm text-slate-900">
-                    Creado: {new Date(report.fecha_reporte).toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric" })}
-                  </p>
-                </div>
-                <div className="flex flex-col items-end gap-2">
-                  <span
-                    className={`px-3 py-1 rounded-[8px] text-sm font-semibold ${
-                      estadoMap[report.estado] === "Generado"
-                        ? "bg-[#bfe2ff] text-[#0a496a]"
-                        : estadoMap[report.estado] === "Pendiente"
-                        ? "bg-[#ffd79c] text-[#8a6a00]"
-                        : "bg-[#e0e0e0] text-[#555]"
-                    }`}
-                  >
-                    {estadoMap[report.estado] || "Pendiente"}
-                  </span>
-                  <button className="flex items-center gap-1 px-[14px] py-[8px] border-none rounded-[8px] cursor-pointer bg-[#0a496a] text-white hover:bg-[#0d5a80] text-sm">
-                    <IoDownloadOutline size={16} className="shrink-0" /> Descargar
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </main>
-    </div>
-  );
-};
-
-export default ReportesPage;
+function Overlay({children,onClose}:{children:React.ReactNode;onClose:()=>void}){return <div className="fixed inset-0 z-50 grid place-items-center bg-black/50 p-4" onMouseDown={onClose}><div onMouseDown={e=>e.stopPropagation()} className="max-h-[94vh] w-full max-w-3xl overflow-y-auto rounded-3xl bg-white p-7 text-[#0a496a] shadow-2xl">{children}</div></div>}

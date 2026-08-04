@@ -12,4 +12,5 @@ export * from './reportes';
 export * from './incidentes';
 export * from './objetos-perdidos';
 export * from './proyectos';
+export * from './minutas';
 export * from './eventos';

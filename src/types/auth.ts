@@ -60,6 +60,8 @@ export interface Membership {
   privada_codigo: string;
   rol: 'moderador' | 'habitante';
   usuario?: string;
-  status?: string;
+  status?: 'activo' | 'suspendido';
+  created_at?: string;
+  inactivated_at?: string | null;
   modulos_contratados?: string[];
 }

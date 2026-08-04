@@ -1,6 +1,6 @@
 import { fetchApiAuth } from '@/lib/api';
 import { buildQueryString } from '@/lib/utils';
-import { Reservacion, ReservacionFilter, ReservacionPayload, ReservacionesResponse } from '@/types/reservaciones';
+import { CrearReservacionRequest, Reservacion, ReservacionFilter, ReservacionPayload, ReservacionesResponse } from '@/types/reservaciones';
 
 export async function getReservaciones(
   token: string,
@@ -27,4 +27,8 @@ export async function getReservacionById(
   id: string
 ): Promise<Reservacion> {
   return fetchApiAuth<Reservacion>(`/api/reservaciones/${id}/`, token);
+}
+
+export async function crearReservacion(token:string,payload:CrearReservacionRequest):Promise<Reservacion>{
+  return fetchApiAuth<Reservacion>('/api/reservaciones/',token,{method:'POST',body:JSON.stringify(payload)});
 }
