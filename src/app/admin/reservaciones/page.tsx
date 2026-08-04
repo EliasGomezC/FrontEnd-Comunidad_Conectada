@@ -1,146 +1,103 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "@/features/authentication/AuthContext";
-import { getReservaciones } from "@/services/reservaciones";
-import { Reservacion } from "@/types/reservaciones";
+import { getAreas } from "@/services/areas";
+import { createReservacion, deleteReservacion, getReservaciones, updateReservacion } from "@/services/reservaciones";
+import type { Area } from "@/types/areas";
+import type { Reservacion, ReservacionPayload } from "@/types/reservaciones";
 import Sidebar from "@/components/Sidebar";
 import SearchBar from "@/components/SearchBar";
 import StatusBadge from "@/components/StatusBadge";
-import Pagination from "@/components/Pagination";
-import { IoEyeOutline } from "react-icons/io5";
+import NewReservationModal from "./modal/NewReservationModal";
+import ReservationDetailsModal from "./modal/ReservationDetailsModal";
+import { IoPencilOutline, IoTrashOutline } from "react-icons/io5";
 
-const estadoMap: Record<string, "Aprobado" | "Pendiente" | "Rechazado" | "Completado"> = {
-  pendiente: "Pendiente",
-  aprobado: "Aprobado",
-  rechazado: "Rechazado",
-  completado: "Completado",
-  cancelado: "Rechazado",
-};
+const estadoMap: Record<string, "Aprobado" | "Pendiente" | "Rechazado" | "Completado"> = { pendiente: "Pendiente", aprobada: "Aprobado", cancelada: "Rechazado" };
 
-const ReservacionesPage = () => {
-  const { token, logout, activeMembership } = useAuth();
-  const [reservaciones, setReservaciones] = useState<Reservacion[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+export default function ReservacionesPage() {
+  const { token, user } = useAuth();
+  const [items, setItems] = useState<Reservacion[]>([]);
+  const [areas, setAreas] = useState<Area[]>([]);
+  const [search, setSearch] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [modal, setModal] = useState<"new" | "details" | null>(null);
+  const [reservation, setReservation] = useState<Reservacion | null>(null);
+  const [saving, setSaving] = useState(false);
 
+  const load = useCallback(async () => {
+    if (!token) return;
+    try {
+      setLoading(true);
+      const [reservaciones, areasResponse] = await Promise.all([getReservaciones(token), getAreas(token)]);
+      setItems(reservaciones.results); setAreas(areasResponse.results); setError(null);
+    } catch (cause) { setError(cause instanceof Error ? cause.message : "No se pudieron cargar las reservaciones."); }
+    finally { setLoading(false); }
+  }, [token]);
   useEffect(() => {
-    if (!token || !activeMembership) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- la carga asíncrona actualiza el estado al resolver la API.
+    void load();
+  }, [load]);
 
-    const fetchReservaciones = async () => {
-      try {
-        setIsLoading(true);
-        const data = await getReservaciones(token, { privada: activeMembership.privada });
-        setReservaciones(data.results);
-        setTotalPages(Math.ceil(data.count / 10));
-        setError(null);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Error al cargar reservaciones");
-        if (err instanceof Error && err.message.includes("401")) {
-          logout();
-        }
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  const close = () => { setModal(null); setReservation(null); };
+  const openNew = () => { setReservation(null); setModal("new"); };
+  const openDetails = (item: Reservacion) => { setReservation(item); setModal("details"); };
 
-    fetchReservaciones();
-  }, [token, logout, activeMembership]);
+  const submit = async (data: ReservacionPayload) => {
+    if (!token) return;
+    setSaving(true); setError(null);
+    try {
+      if (reservation) await updateReservacion(token, reservation.id, data);
+      else await createReservacion(token, data);
+      close(); await load();
+    } catch (cause) { setError(cause instanceof Error ? cause.message : "No se pudo guardar la reservación."); }
+    finally { setSaving(false); }
+  };
 
-  const filteredReservaciones = useMemo(() => {
-    if (!searchTerm) return reservaciones;
-    const term = searchTerm.toLowerCase();
-    return reservaciones.filter(
-      (reservacion) =>
-        reservacion.area_nombre?.toLowerCase().includes(term) ||
-        reservacion.usuario_nombre?.toLowerCase().includes(term) ||
-        reservacion.descripcion?.toLowerCase().includes(term)
-    );
-  }, [reservaciones, searchTerm]);
+  const cambiarEstado = async (estado: "aprobada" | "cancelada") => {
+    if (!token || !reservation) return;
+    setSaving(true); setError(null);
+    try { await updateReservacion(token, reservation.id, { estado }); close(); await load(); }
+    catch (cause) { setError(cause instanceof Error ? cause.message : "No se pudo actualizar la reservación."); }
+    finally { setSaving(false); }
+  };
 
-  return (
-    <div className="flex min-h-screen bg-[#dfe5eb]">
-      <Sidebar activeItem="Reservaciones" />
+  const remove = async (id: string) => { if (!token || !window.confirm("¿Cancelar esta reservación?")) return; try { await deleteReservacion(token, id); await load(); } catch (cause) { setError(cause instanceof Error ? cause.message : "No se pudo cancelar la reservación."); } };
 
-      <main className="flex-1 p-[30px]">
-        <div className="flex justify-between items-center gap-5 flex-wrap mb-8">
-          <div>
-            <h1 className="m-0 text-[52px] text-[#124b70]">Gestión de Reservaciones</h1>
-            <p className="m-0 text-[18px] text-[#295c7f]">Consulta y administra las reservaciones de la comunidad</p>
-            <SearchBar 
-              placeholder="Buscar por reservación o usuario" 
-              className="w-[560px] max-w-full mt-3"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-          <button className="bg-[#0a496a] text-white border-none p-4 rounded-[14px] cursor-pointer hover:bg-[#0d5a80] text-lg">
-            ＋ Nueva Reservación
-          </button>
-        </div>
+  const filtered = items.filter((item) => `${item.folio} ${areas.find((a) => a.id === item.area)?.nombre || ""} ${item.descripcion || ""}`.toLowerCase().includes(search.toLowerCase()));
 
-        {isLoading && (
-          <div className="flex items-center justify-center py-20">
-            <div className="text-[#0a496a] text-xl">Cargando reservaciones...</div>
-          </div>
-        )}
+  return <div className="flex min-h-screen bg-[#dfe5eb]"><Sidebar activeItem="Reservaciones" /><main className="flex-1 p-[30px]">
+    <div className="mb-8 flex flex-wrap items-center justify-between gap-5"><div><h1 className="m-0 text-[52px] text-[#124b70]">Gestión de Reservaciones</h1><p className="m-0 text-[18px] text-[#295c7f]">Consulta y administra las reservaciones de la comunidad</p><SearchBar placeholder="Buscar reservación" className="mt-3 w-[560px] max-w-full" value={search} onChange={(e) => setSearch(e.target.value)} /></div><button onClick={openNew} disabled={!areas.length} className="rounded-[14px] bg-[#0a496a] p-4 text-lg text-white disabled:opacity-50">＋ Nueva Reservación</button></div>
+    {error && <p className="mb-4 rounded bg-red-100 p-3 text-red-700">{error}</p>}
+    {loading ? <p className="py-20 text-center text-xl text-[#0a496a]">Cargando reservaciones...</p> : <div className="overflow-x-auto rounded-[0_0_30px_30px] border-2 border-[#2b6a8b] bg-white shadow"><table className="w-full border-collapse"><thead><tr className="bg-[#0a496a] text-left text-white"><th className="p-4">Folio</th><th className="p-4">Área</th><th className="p-4">Fecha</th><th className="p-4">Horario</th><th className="p-4">Estado</th><th className="p-4">Acciones</th></tr></thead><tbody>{filtered.map((item, index) => <tr key={item.id} className={index % 2 ? "bg-white" : "bg-[#eef2f6]"}><td className="p-4">#{item.folio}</td><td className="p-4">{areas.find((area) => area.id === item.area)?.nombre || `Área ${item.area}`}</td><td className="p-4">{item.fecha}</td><td className="p-4">{item.hora_inicio.slice(0, 5)} – {item.hora_fin.slice(0, 5)}</td><td className="p-4"><StatusBadge status={estadoMap[item.estado] || "Pendiente"} /></td><td className="flex gap-2 p-4"><button onClick={() => openDetails(item)} title="Ver detalle"><IoPencilOutline size={20} /></button><button onClick={() => void remove(item.id)} title="Cancelar" className="text-red-700"><IoTrashOutline size={20} /></button></td></tr>)}{!filtered.length && <tr><td colSpan={6} className="p-8 text-center">No hay reservaciones.</td></tr>}</tbody></table></div>}
 
-        {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-            {error}
-          </div>
-        )}
+    {modal === "new" && (
+      <NewReservationModal
+        key={reservation?.id ?? "create"}
+        open
+        areas={areas}
+        reservations={items}
+        initial={reservation}
+        saving={saving}
+        onClose={close}
+        onSubmit={(data) => void submit(data)}
+      />
+    )}
 
-        {!isLoading && !error && (
-          <>
-            <div className="mt-6 bg-white rounded-[0_0_30px_30px] overflow-hidden shadow-[0_4px_10px_rgba(0,0,0,0.12)] border-2 border-[#2b6a8b]">
-              <table className="w-full border-collapse">
-                <thead>
-                  <tr className="bg-[#0a496a] text-white">
-                    <th className="p-[18px] text-left">Área</th>
-                    <th className="p-[18px] text-left">Fecha</th>
-                    <th className="p-[18px] text-left">Horario</th>
-                    <th className="p-[18px] text-left">Solicitante</th>
-                    <th className="p-[18px] text-left">Estado</th>
-                    <th className="p-[18px] text-left">Más</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredReservaciones.map((reservation, index) => (
-                    <tr
-                      key={reservation.id}
-                      className={`${index % 2 === 0 ? "bg-[#eef2f6]" : "bg-white"}`}
-                    >
-                      <td className="p-4 text-slate-900">{reservation.area_nombre || `Área ${reservation.area}`}</td>
-                      <td className="p-4 text-slate-900">
-                        {new Date(reservation.fecha).toLocaleDateString("es-ES")}
-                      </td>
-                      <td className="p-4 text-slate-900">
-                        {reservation.hora_inicio} - {reservation.hora_fin}
-                      </td>
-                      <td className="p-4 text-slate-900">
-                        {reservation.usuario_nombre || `Usuario ${reservation.usuario}`}
-                      </td>
-                      <td className="p-4 text-slate-900">
-                        <StatusBadge status={estadoMap[reservation.estado] || "Pendiente"} />
-                      </td>
-                      <td className="p-4 text-slate-900">
-                        <IoEyeOutline size={20} />
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
-            </div>
-          </>
-        )}
-      </main>
-    </div>
-  );
-};
-
-export default ReservacionesPage;
+    {modal === "details" && reservation && (
+      <ReservationDetailsModal
+        key={reservation.id}
+        open
+        reservation={reservation}
+        areas={areas}
+        solicitante={reservation.usuario === user?.id ? (user?.perfil?.nombres || "Tú") : "Habitante"}
+        saving={saving}
+        onClose={close}
+        onSolicitarCambios={() => setModal("new")}
+        onRechazar={() => void cambiarEstado("cancelada")}
+        onAprobar={() => void cambiarEstado("aprobada")}
+      />
+    )}
+  </main></div>;
+}
