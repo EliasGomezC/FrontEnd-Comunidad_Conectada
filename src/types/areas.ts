@@ -1,15 +1,16 @@
 export interface Area {
-  id: number;
+  id: string;
+  privada: string;
+  codigo: string;
   nombre: string;
-  tipo: string;
   descripcion?: string;
-  capacidad?: number;
-  activa: boolean;
+  capacidad: number;
   imagen?: string;
+  status: string;
 }
 
 export interface AreaFilter {
-  tipo?: string;
+  privada?: string;
   search?: string;
 }
 

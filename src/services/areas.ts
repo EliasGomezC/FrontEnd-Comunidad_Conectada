@@ -12,7 +12,7 @@ export async function getAreas(
 
 export async function getAreaById(
   token: string,
-  id: number
+  id: string
 ): Promise<Area> {
   return fetchApiAuth<Area>(`/api/areas/${id}/`, token);
 }

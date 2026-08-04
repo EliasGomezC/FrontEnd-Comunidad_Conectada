@@ -16,7 +16,6 @@ export interface Usuario {
     telefono: string;
     bio: string;
   };
-  role?: 'admin' | 'moderador' | 'habitante';
 }
 
 export interface UsuarioFilter {

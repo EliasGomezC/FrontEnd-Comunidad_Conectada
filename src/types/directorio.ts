@@ -1,17 +1,24 @@
 export interface DirectorioContacto {
-  id: number;
+  id: string;
+  privada: string;
   nombre: string;
-  categoria: string;
-  telefono: string;
-  horario?: string;
+  categorias: string;
+  num_tel: string;
+  codigo: string;
   descripcion?: string;
-  email?: string;
+  ubicacion?: string;
+  imagenes?: string;
+  status: string;
 }
 
 export interface DirectorioFilter {
-  categoria?: string;
+  privada?: string;
+  categorias?: string;
   search?: string;
+  page?: number;
 }
+
+export type DirectorioPayload = Omit<DirectorioContacto, 'id' | 'status' | 'imagenes'> & { imagenes?: File | null };
 
 export interface DirectorioResponse {
   count: number;

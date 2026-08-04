@@ -1,23 +1,27 @@
 export interface Reservacion {
-  id: number;
-  area: number;
-  area_nombre?: string;
+  id: string;
+  folio: number;
+  area: string;
+  usuario?: string;
   fecha: string;
   hora_inicio: string;
   hora_fin: string;
-  estado: 'pendiente' | 'aprobado' | 'rechazado' | 'completado' | 'cancelado';
-  solicitante?: number;
-  solicitante_nombre?: string;
-  notas?: string;
-  created_at?: string;
+  estado: 'pendiente' | 'aprobada' | 'cancelada';
+  num_asistentes: number;
+  descripcion?: string;
 }
 
 export interface ReservacionFilter {
-  area?: number;
+  area?: string;
   fecha?: string;
-  estado?: 'pendiente' | 'aprobado' | 'rechazado' | 'completado' | 'cancelado';
+  estado?: 'pendiente' | 'aprobada' | 'cancelada';
   search?: string;
+  page?: number;
 }
+
+export type ReservacionPayload = Pick<Reservacion, 'area' | 'fecha' | 'hora_inicio' | 'hora_fin' | 'num_asistentes' | 'descripcion'> & {
+  estado?: Reservacion['estado'];
+};
 
 export interface ReservacionesResponse {
   count: number;

@@ -10,10 +10,11 @@ export async function fetchApi<T>(
 ): Promise<T> {
   const url = getApiUrl(endpoint);
   
+  const isFormData = typeof FormData !== 'undefined' && options.body instanceof FormData;
   const config: RequestInit = {
     ...options,
     headers: {
-      'Content-Type': 'application/json',
+      ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
       ...options.headers,
     },
   };
@@ -67,6 +68,7 @@ export async function fetchApi<T>(
     throw new Error(errorMessage);
   }
 
+  if (response.status === 204) return undefined as T;
   return response.json();
 }
 

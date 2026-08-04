@@ -1,154 +1,106 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "@/features/authentication/AuthContext";
-import { getDirectorio } from "@/services/directorio";
-import { DirectorioContacto } from "@/types/directorio";
+import { createContacto, deleteContacto, getDirectorio, updateContacto } from "@/services/directorio";
+import type { DirectorioContacto, DirectorioPayload } from "@/types/directorio";
 import Sidebar from "@/components/Sidebar";
 import SearchBar from "@/components/SearchBar";
-import {
-  IoShield, IoLeaf, IoConstructOutline, IoBulb, IoCutOutline,
-  IoSparkles, IoCar, IoCamera, IoFlame,
-  IoEyeOutline, IoPencilOutline, IoTrashOutline
-} from "react-icons/io5";
+import Button from "@/components/Button";
+import BaseModal from "@/components/Modal/BaseModal";
+import ContactForm from "@/components/Modal/ContactForm";
+import ContactDetails from "@/components/Modal/ContactDetails";
+import DeleteConfirmation from "@/components/Modal/DeleteConfirmation";
+import { IoCallOutline, IoPencilOutline, IoTrashOutline } from "react-icons/io5";
 
-const iconMap: Record<string, React.ReactNode> = {
-  seguridad: <IoShield size={50} color="#12486d" />,
-  seguridad_ciudadana: <IoShield size={50} color="#12486d" />,
-  jardin: <IoLeaf size={50} color="#12486d" />,
-  jardineria: <IoLeaf size={50} color="#12486d" />,
-  mantenimiento: <IoConstructOutline size={50} color="#12486d" />,
-  plomeria: <IoConstructOutline size={50} color="#12486d" />,
-  electricista: <IoBulb size={50} color="#12486d" />,
-  electricidad: <IoBulb size={50} color="#12486d" />,
-  peluqueria: <IoCutOutline size={50} color="#12486d" />,
-  corte_cabello: <IoCutOutline size={50} color="#12486d" />,
-  limpieza: <IoSparkles size={50} color="#12486d" />,
-  servicio_limpieza: <IoSparkles size={50} color="#12486d" />,
-  agua: <IoCar size={50} color="#12486d" />,
-  agua_potable: <IoCar size={50} color="#12486d" />,
-  camaras: <IoCamera size={50} color="#12486d" />,
-  security_cam: <IoCamera size={50} color="#12486d" />,
-  gas: <IoFlame size={50} color="#12486d" />,
-};
+const empty = (privada = ""): DirectorioPayload => ({ privada, nombre: "", categorias: "", num_tel: "", codigo: "", descripcion: "", ubicacion: "" });
 
-const defaultIcon = <IoCar size={50} color="#12486d" />;
+type ModalType = "create" | "view" | "edit" | "delete";
 
-const DirectorioPage = () => {
-  const { token, logout } = useAuth();
-  const [contactos, setContactos] = useState<DirectorioContacto[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState("");
+export default function DirectorioPage() {
+  const { token, user } = useAuth();
+  const privada = user?.membresias?.[0]?.privada || "";
+  const [items, setItems] = useState<DirectorioContacto[]>([]); const [search, setSearch] = useState("");
+  const [error, setError] = useState<string | null>(null); const [loading, setLoading] = useState(true);
+  const [modalType, setModalType] = useState<ModalType | null>(null);
+  const [selectedContact, setSelectedContact] = useState<DirectorioContacto | null>(null);
+  const [form, setForm] = useState<DirectorioPayload>(empty());
+  const [preview, setPreview] = useState<string[]>([]);
+  const [saving, setSaving] = useState(false);
+  const previewUrls = useRef<string[]>([]);
 
+  const revokePreviews = () => { previewUrls.current.forEach((url) => URL.revokeObjectURL(url)); previewUrls.current = []; };
+
+  const load = useCallback(async () => { if (!token) return; try { setLoading(true); const data = await getDirectorio(token); setItems(data.results); setError(null); } catch (cause) { setError(cause instanceof Error ? cause.message : "No se pudo cargar el directorio."); } finally { setLoading(false); } }, [token]);
   useEffect(() => {
-    if (!token) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- la carga asíncrona actualiza el estado al resolver la API.
+    void load();
+  }, [load]);
 
-    const fetchDirectorio = async () => {
-      try {
-        setIsLoading(true);
-        const data = await getDirectorio(token);
-        setContactos(data.results);
-        setError(null);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Error al cargar directorio");
-        if (err instanceof Error && err.message.includes("401")) {
-          logout();
-        }
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  const close = () => { revokePreviews(); setModalType(null); setSelectedContact(null); setForm(empty()); setPreview([]); };
+  const openCreate = () => { setForm(empty(privada)); setSelectedContact(null); setPreview([]); setModalType("create"); };
+  const openView = (item: DirectorioContacto) => { setSelectedContact(item); setModalType("view"); };
+  const openEdit = (item: DirectorioContacto) => { setSelectedContact(item); setForm({ privada: item.privada, nombre: item.nombre, categorias: item.categorias, num_tel: item.num_tel, codigo: item.codigo, descripcion: item.descripcion || "", ubicacion: item.ubicacion || "" }); setPreview(item.imagenes ? [item.imagenes] : []); setModalType("edit"); };
+  const openDelete = (item: DirectorioContacto) => { setSelectedContact(item); setModalType("delete"); };
 
-    fetchDirectorio();
-  }, [token, logout]);
-
-  const filteredContactos = useMemo(() => {
-    if (!searchTerm) return contactos;
-    const term = searchTerm.toLowerCase();
-    return contactos.filter(
-      (contacto) =>
-        contacto.nombre.toLowerCase().includes(term) ||
-        contacto.categoria.toLowerCase().includes(term) ||
-        contacto.descripcion?.toLowerCase().includes(term)
-    );
-  }, [contactos, searchTerm]);
-
-  const getIcon = (categoria: string) => {
-    const normalizedKey = categoria.toLowerCase().replace(/ /g, "_");
-    return iconMap[normalizedKey] || defaultIcon;
+  const submit = async () => {
+    if (!token || !modalType) return;
+    setSaving(true); setError(null);
+    try {
+      const data: DirectorioPayload = { ...form, privada: form.privada || privada };
+      if (modalType === "edit" && selectedContact) await updateContacto(token, selectedContact.id, data);
+      else await createContacto(token, data);
+      close(); await load();
+    } catch (cause) { setError(cause instanceof Error ? cause.message : "No se pudo guardar el contacto."); }
+    finally { setSaving(false); }
   };
 
-  return (
-    <div className="flex min-h-screen bg-[#dde3ea]">
-      <Sidebar activeItem="Directorio" />
+  const confirmDelete = async () => {
+    if (!token || !selectedContact) return;
+    setSaving(true); setError(null);
+    try { await deleteContacto(token, selectedContact.id); close(); await load(); }
+    catch (cause) { setError(cause instanceof Error ? cause.message : "No se pudo eliminar el contacto."); }
+    finally { setSaving(false); }
+  };
 
-      <main className="flex-1 p-[30px]">
-        <div className="flex justify-between items-center gap-5 flex-wrap mb-8">
-          <div>
-            <h1 className="text-[52px] m-0 mb-5 text-[#12486d]">Directorio Virtual</h1>
-            <SearchBar 
-              placeholder="Buscar contacto..." 
-              className="w-[500px] max-w-full"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-          <button className="bg-[#0a496a] text-white border-none px-[26px] py-[18px] rounded-[14px] cursor-pointer hover:bg-[#0d5a80]">
-            + Añadir Contacto
-          </button>
-        </div>
+  const updateForm = (patch: Partial<DirectorioPayload>) => setForm((current) => ({ ...current, ...patch }));
+  const onAddImages = (files: File[]) => {
+    if (!files.length) return;
+    revokePreviews();
+    updateForm({ imagenes: files[0] });
+    previewUrls.current = [URL.createObjectURL(files[0])];
+    setPreview(previewUrls.current);
+  };
+  const onRemoveImage = () => { revokePreviews(); updateForm({ imagenes: null }); setPreview([]); };
 
-        {isLoading && (
-          <div className="flex items-center justify-center py-20">
-            <div className="text-[#0a496a] text-xl">Cargando directorio...</div>
-          </div>
-        )}
+  const filtered = items.filter((item) => `${item.nombre} ${item.categorias} ${item.descripcion || ""}`.toLowerCase().includes(search.toLowerCase()));
+  const modalTitle = modalType === "create" ? "Nuevo Contacto" : modalType === "edit" ? "Editar Contacto" : modalType === "view" ? selectedContact?.nombre || "Ver Contacto" : undefined;
 
-        {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-            {error}
-          </div>
-        )}
+  return <div className="flex min-h-screen bg-[#dde3ea]"><Sidebar activeItem="Directorio"/><main className="flex-1 p-[30px]"><div className="mb-8 flex flex-wrap items-center justify-between gap-5"><div><h1 className="m-0 mb-5 text-[52px] text-[#12486d]">Directorio Virtual</h1><SearchBar placeholder="Buscar contacto..." className="w-[500px] max-w-full" value={search} onChange={(e) => setSearch(e.target.value)}/></div><button onClick={openCreate} disabled={!privada} className="rounded-[14px] bg-[#0a496a] px-[26px] py-[18px] text-white disabled:opacity-50">+ Añadir contacto</button></div>{!privada && <p className="mb-4 rounded bg-amber-100 p-3 text-amber-800">Únete a una privada antes de añadir contactos.</p>}{error && <p className="mb-4 rounded bg-red-100 p-3 text-red-700">{error}</p>}{loading ? <p className="py-20 text-center text-xl text-[#0a496a]">Cargando directorio...</p> : <div className="grid grid-cols-[repeat(auto-fit,minmax(320px,1fr))] gap-6">{filtered.map((item) => <article key={item.id} onClick={() => openView(item)} className="cursor-pointer rounded-[20px] bg-white p-5 shadow"><h2 className="text-xl font-bold text-slate-900">{item.nombre}</h2><span className="rounded bg-[#c8f0bf] px-2 py-1 text-sm text-[#215d2d]">{item.categorias}</span><p className="mt-4 flex items-center gap-2"><IoCallOutline/> {item.num_tel || "Sin teléfono"}</p><p className="text-sm text-slate-700">{item.descripcion || item.ubicacion || "Sin descripción"}</p><div className="mt-4 flex justify-end gap-3"><button onClick={(e) => { e.stopPropagation(); openEdit(item); }} className="flex items-center gap-1 rounded bg-[#ffd58d] px-3 py-2"><IoPencilOutline/>Editar</button><button onClick={(e) => { e.stopPropagation(); openDelete(item); }} className="flex items-center gap-1 rounded bg-[#ffb9b9] px-3 py-2"><IoTrashOutline/>Eliminar</button></div></article>)}{!filtered.length && <p>No hay contactos para mostrar.</p>}</div>}
 
-        {!isLoading && !error && (
-          <div className="grid grid-cols-[repeat(auto-fit,minmax(320px,1fr))] gap-6 mt-8">
-            {filteredContactos.map((contact) => (
-              <div
-                key={contact.id}
-                className="bg-white rounded-[20px] p-5 shadow-[0_4px_10px_rgba(0,0,0,0.12)]"
-              >
-                <div className="flex gap-4">
-                  <div className="flex-1">
-                    <h2 className="m-0 text-xl text-slate-900">{contact.nombre}</h2>
-                    <span className="inline-block p-1 px-2 rounded-[8px] bg-[#c8f0bf] text-[#215d2d] text-sm mt-2">
-                      {contact.categoria}
-                    </span>
-                    <p className="mt-2"><strong>Tel:</strong> {contact.telefono}</p>
-                    <small className="text-slate-900">{contact.horario || "Sin horario especificado"}</small>
-                  </div>
-                  <div className="w-[150px] h-[130px] rounded-[14px] bg-[#d9e7f3] flex items-center justify-center">
-                    {getIcon(contact.categoria)}
-                  </div>
-                </div>
-                <div className="flex justify-end gap-2 mt-4">
-                  <button className="flex items-center gap-1 px-[14px] py-[9px] border-none rounded-[8px] font-bold cursor-pointer bg-[#0a496a] text-white hover:bg-[#0d5a80]">
-                    <IoEyeOutline size={18} /> Mostrar
-                  </button>
-                  <button className="flex items-center gap-1 px-[14px] py-[9px] border-none rounded-[8px] font-bold cursor-pointer bg-[#ffd58d] hover:bg-[#ffcc70]">
-                    <IoPencilOutline size={18} /> Editar
-                  </button>
-                  <button className="flex items-center gap-1 px-[14px] py-[9px] border-none rounded-[8px] font-bold cursor-pointer bg-[#ffb9b9] hover:bg-[#ffa3a3]">
-                    <IoTrashOutline size={18} /> Eliminar
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </main>
-    </div>
-  );
-};
-
-export default DirectorioPage;
+    <BaseModal
+      open={modalType !== null}
+      title={modalTitle}
+      onClose={close}
+      footer={(modalType === "create" || modalType === "edit") ? (
+        <>
+          <Button variant="secondary" onClick={close} style={{ flex: 1 }}>Cancelar</Button>
+          <Button variant="primary" onClick={() => void submit()} loading={saving} style={{ flex: 1 }}>Guardar</Button>
+        </>
+      ) : modalType === "view" ? (
+        <>
+          <Button variant="secondary" onClick={close} style={{ flex: 1 }}>Regresar</Button>
+          <Button variant="primary" onClick={() => selectedContact && openEdit(selectedContact)} style={{ flex: 1 }}>Editar</Button>
+        </>
+      ) : undefined}
+    >
+      {(modalType === "create" || modalType === "edit") && (
+        <ContactForm form={form} onChange={updateForm} images={preview} onAddImages={onAddImages} onRemoveImage={onRemoveImage} />
+      )}
+      {modalType === "view" && selectedContact && <ContactDetails contact={selectedContact} />}
+      {modalType === "delete" && selectedContact && (
+        <DeleteConfirmation contact={selectedContact} onCancel={close} onConfirm={() => void confirmDelete()} saving={saving} />
+      )}
+    </BaseModal>
+  </main></div>;
+}
