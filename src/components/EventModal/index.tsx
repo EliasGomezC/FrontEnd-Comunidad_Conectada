@@ -15,6 +15,7 @@ interface EventModalProps {
   saving?: boolean;
   onClose: () => void;
   onSubmit: (data: EventoPayload) => void;
+  onDelete?: () => void;
 }
 
 const emptyValues = (): EventFormValues => ({
@@ -51,6 +52,7 @@ export default function EventModal({
   saving,
   onClose,
   onSubmit,
+  onDelete,
 }: EventModalProps) {
   const editing = mode === "edit";
   const [values, setValues] = useState<EventFormValues>(() =>
@@ -95,23 +97,32 @@ export default function EventModal({
       }
       onClose={onClose}
       footer={
-        <>
-          <Button
-            variant="secondary"
-            onClick={onClose}
-            style={{ width: 220, height: 52 }}
-          >
-            Cancelar
-          </Button>
-          <Button
-            variant="primary"
-            onClick={handleSubmit}
-            loading={saving}
-            style={{ width: 220, height: 52 }}
-          >
-            {editing ? "Guardar Cambios" : "Crear Evento"}
-          </Button>
-        </>
+        <div style={{ display: "flex", width: "100%", gap: 12, alignItems: "center", justifyContent: "space-between" }}>
+          {editing && onDelete ? (
+            <Button variant="danger" onClick={onDelete} style={{ width: 170, height: 52 }}>
+              Eliminar
+            </Button>
+          ) : (
+            <span />
+          )}
+          <div style={{ display: "flex", gap: 12 }}>
+            <Button
+              variant="secondary"
+              onClick={onClose}
+              style={{ width: 220, height: 52 }}
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="primary"
+              onClick={handleSubmit}
+              loading={saving}
+              style={{ width: 220, height: 52 }}
+            >
+              {editing ? "Guardar Cambios" : "Crear Evento"}
+            </Button>
+          </div>
+        </div>
       }
     >
       <EventForm
