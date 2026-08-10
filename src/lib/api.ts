@@ -1,4 +1,11 @@
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
+const ACCESS_TOKEN_KEY = 'comunidad-conectada-access-token';
+const REFRESH_TOKEN_KEY = 'comunidad-conectada-refresh-token';
+export const TOKEN_REFRESHED_EVENT = 'comunidad-conectada-token-refreshed';
+export const SESSION_EXPIRED_EVENT = 'comunidad-conectada-session-expired';
+
+interface RefreshResponse { access: string; refresh?: string }
+let refreshRequest: Promise<string> | null = null;
 
 export class ApiError extends Error {
   constructor(
@@ -61,10 +68,14 @@ export async function fetchApi<T>(
     }
 
     const nonFieldErrors = errorData.non_field_errors;
+    const firstFieldError = Object.values(errorData).find(
+      (value) => Array.isArray(value) && typeof value[0] === 'string'
+    ) as string[] | undefined;
     const errorMessage =
       (typeof errorData.detail === 'string' && errorData.detail) ||
       (typeof errorData.message === 'string' && errorData.message) ||
       (Array.isArray(nonFieldErrors) && typeof nonFieldErrors[0] === 'string' && nonFieldErrors[0]) ||
+      firstFieldError?.[0] ||
       (Object.keys(errorData).length > 0 ? JSON.stringify(errorData) : '') ||
       `Error ${response.status}: ${response.statusText || 'Error en la petición'}`;
 
@@ -80,11 +91,42 @@ export async function fetchApiAuth<T>(
   token: string,
   options: RequestInit = {}
 ): Promise<T> {
-  return fetchApi<T>(endpoint, {
+  const requestWithToken = (accessToken: string) => fetchApi<T>(endpoint, {
     ...options,
-    headers: {
-      ...options.headers,
-      'Authorization': `Bearer ${token}`,
-    },
+    headers: { ...options.headers, 'Authorization': `Bearer ${accessToken}` },
   });
+
+  try {
+    return await requestWithToken(token);
+  } catch (error) {
+    if (!(error instanceof ApiError) || error.status !== 401 || typeof window === 'undefined') throw error;
+
+    const refreshToken = localStorage.getItem(REFRESH_TOKEN_KEY);
+    if (!refreshToken) {
+      window.dispatchEvent(new Event(SESSION_EXPIRED_EVENT));
+      throw new ApiError('Tu sesión venció. Inicia sesión nuevamente.', 401);
+    }
+
+    let newAccessToken: string;
+    try {
+      if (!refreshRequest) {
+        refreshRequest = fetchApi<RefreshResponse>('/api/auth/token/refresh/', {
+          method: 'POST',
+          body: JSON.stringify({ refresh: refreshToken }),
+        }).then((data) => {
+          localStorage.setItem(ACCESS_TOKEN_KEY, data.access);
+          if (data.refresh) localStorage.setItem(REFRESH_TOKEN_KEY, data.refresh);
+          window.dispatchEvent(new CustomEvent(TOKEN_REFRESHED_EVENT, { detail: data.access }));
+          return data.access;
+        }).finally(() => { refreshRequest = null; });
+      }
+      newAccessToken = await refreshRequest;
+    } catch {
+      localStorage.removeItem(ACCESS_TOKEN_KEY);
+      localStorage.removeItem(REFRESH_TOKEN_KEY);
+      window.dispatchEvent(new Event(SESSION_EXPIRED_EVENT));
+      throw new ApiError('Tu sesión venció. Inicia sesión nuevamente.', 401);
+    }
+    return requestWithToken(newAccessToken);
+  }
 }

@@ -3,7 +3,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { LoginRequest, RegisterRequest, RegisterResponse, TokenResponse, User, Perfil, Membership } from '@/types/auth';
-import { ApiError, fetchApi } from '@/lib/api';
+import { ApiError, fetchApi, SESSION_EXPIRED_EVENT, TOKEN_REFRESHED_EVENT } from '@/lib/api';
 
 interface AuthContextType {
   token: string | null;
@@ -167,6 +167,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem(ACTIVE_MEMBERSHIP_KEY);
     router.push('/login');
   };
+
+  useEffect(() => {
+    const updateAccessToken = (event: Event) => {
+      const refreshedToken = (event as CustomEvent<string>).detail;
+      if (refreshedToken) setToken(refreshedToken);
+    };
+    const expireSession = () => logout();
+    window.addEventListener(TOKEN_REFRESHED_EVENT, updateAccessToken);
+    window.addEventListener(SESSION_EXPIRED_EVENT, expireSession);
+    return () => {
+      window.removeEventListener(TOKEN_REFRESHED_EVENT, updateAccessToken);
+      window.removeEventListener(SESSION_EXPIRED_EVENT, expireSession);
+    };
+  });
 
   const isModerator = user?.role === 'admin' || activeMembership?.rol === 'moderador' ||
     (!activeMembership && user?.membresias?.some((membership) => membership.rol === 'moderador') === true);

@@ -80,7 +80,7 @@ export default function LobbyPage() {
       return;
     }
     selectPrivate(membership);
-    router.push(membership.rol === "moderador" ? "/admin/pagos" : "/pagos");
+    router.push(membership.rol === "moderador" ? "/admin/usuarios" : "/reportes");
   };
 
   if (isLoading || !isAuthenticated) return <div className="min-h-screen grid place-items-center">Cargando...</div>;
