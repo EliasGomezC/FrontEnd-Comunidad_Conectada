@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
 import Input from "@/components/Input";
 import Select from "@/components/Select";
 import Button from "@/components/Button";
@@ -85,6 +85,11 @@ export default function NewReservationModal({
   const availabilityStatus = availabilityMeta[availability];
   const editing = Boolean(initial);
 
+  const handleSubmit = (event: FormEvent) => {
+    event.preventDefault();
+    onSubmit(form);
+  };
+
   return (
     <BaseModal
       open={open}
@@ -94,6 +99,7 @@ export default function NewReservationModal({
         <>
           <Button
             variant="secondary"
+            type="button"
             onClick={verifyAvailability}
             style={{ height: 40, flex: 1 }}
           >
@@ -101,7 +107,8 @@ export default function NewReservationModal({
           </Button>
           <Button
             variant="primary"
-            onClick={() => onSubmit(form)}
+            type="submit"
+            form="reservation-form"
             loading={saving}
             style={{ height: 40, flex: 1 }}
           >
@@ -110,7 +117,8 @@ export default function NewReservationModal({
         </>
       }
     >
-      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      <form id="reservation-form" onSubmit={handleSubmit}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
         <Select
           label="Área"
           value={form.area}
@@ -194,6 +202,7 @@ export default function NewReservationModal({
           multiline
         />
       </div>
+      </form>
     </BaseModal>
   );
 }
