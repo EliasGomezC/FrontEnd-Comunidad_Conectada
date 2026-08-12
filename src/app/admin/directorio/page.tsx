@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import { useAuth } from "@/features/authentication/AuthContext";
 import { createContacto, deleteContacto, getDirectorio, updateContacto } from "@/services/directorio";
 import type { DirectorioContacto, DirectorioPayload } from "@/types/directorio";
@@ -57,6 +57,11 @@ export default function DirectorioPage() {
       close(); await load();
     } catch (cause) { setError(cause instanceof Error ? cause.message : "No se pudo guardar el contacto."); }
     finally { setSaving(false); }
+  };
+
+  const handleSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    void submit();
   };
 
   const confirmDelete = async () => {
@@ -158,18 +163,20 @@ export default function DirectorioPage() {
       onClose={close}
       footer={(modalType === "create" || modalType === "edit") ? (
         <>
-          <Button variant="secondary" onClick={close} style={{ flex: 1 }}>Cancelar</Button>
-          <Button variant="primary" onClick={() => void submit()} loading={saving} style={{ flex: 1 }}>Guardar</Button>
+          <Button variant="secondary" type="button" onClick={close} style={{ flex: 1 }}>Cancelar</Button>
+          <Button variant="primary" type="submit" form="contact-form" loading={saving} style={{ flex: 1 }}>Guardar</Button>
         </>
       ) : modalType === "view" ? (
         <>
-          <Button variant="secondary" onClick={close} style={{ flex: 1 }}>Regresar</Button>
-          <Button variant="primary" onClick={() => selectedContact && openEdit(selectedContact)} style={{ flex: 1 }}>Editar</Button>
+          <Button variant="secondary" type="button" onClick={close} style={{ flex: 1 }}>Regresar</Button>
+          <Button variant="primary" type="button" onClick={() => selectedContact && openEdit(selectedContact)} style={{ flex: 1 }}>Editar</Button>
         </>
       ) : undefined}
     >
       {(modalType === "create" || modalType === "edit") && (
-        <ContactForm form={form} onChange={updateForm} images={preview} onAddImages={onAddImages} onRemoveImage={onRemoveImage} />
+        <form id="contact-form" onSubmit={handleSubmit}>
+          <ContactForm form={form} onChange={updateForm} images={preview} onAddImages={onAddImages} onRemoveImage={onRemoveImage} />
+        </form>
       )}
       {modalType === "view" && selectedContact && <ContactDetails contact={selectedContact} />}
       {modalType === "delete" && selectedContact && (

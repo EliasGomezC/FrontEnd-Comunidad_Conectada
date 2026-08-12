@@ -62,6 +62,7 @@ export default function ContactForm({
           value={form.num_tel}
           onChange={(value) => onChange({ num_tel: value })}
           placeholder="Número de contacto"
+          required
         />
       </div>
 
