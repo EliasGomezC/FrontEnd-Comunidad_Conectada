@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
 import Button from "@/components/Button";
 import type { Evento, EventoPayload } from "@/types/eventos";
 import EventBaseModal from "./BaseModal";
@@ -73,7 +73,8 @@ export default function EventModal({
     setPreview(file ? URL.createObjectURL(file) : event?.imagen || null);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = (formEvent: FormEvent) => {
+    formEvent.preventDefault();
     const payload: EventoPayload = {
       privada: event?.privada || privada,
       titulo: values.titulo,
@@ -99,7 +100,7 @@ export default function EventModal({
       footer={
         <div style={{ display: "flex", width: "100%", gap: 12, alignItems: "center", justifyContent: "space-between" }}>
           {editing && onDelete ? (
-            <Button variant="danger" onClick={onDelete} style={{ width: 170, height: 52 }}>
+            <Button variant="danger" type="button" onClick={onDelete} style={{ width: 170, height: 52 }}>
               Eliminar
             </Button>
           ) : (
@@ -108,6 +109,7 @@ export default function EventModal({
           <div style={{ display: "flex", gap: 12 }}>
             <Button
               variant="secondary"
+              type="button"
               onClick={onClose}
               style={{ width: 220, height: 52 }}
             >
@@ -115,7 +117,8 @@ export default function EventModal({
             </Button>
             <Button
               variant="primary"
-              onClick={handleSubmit}
+              type="submit"
+              form="event-form"
               loading={saving}
               style={{ width: 220, height: 52 }}
             >
@@ -125,12 +128,14 @@ export default function EventModal({
         </div>
       }
     >
-      <EventForm
-        values={values}
-        onChange={update}
-        preview={preview}
-        onImageChange={handleImage}
-      />
+      <form id="event-form" onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column" }}>
+        <EventForm
+          values={values}
+          onChange={update}
+          preview={preview}
+          onImageChange={handleImage}
+        />
+      </form>
     </EventBaseModal>
   );
 }

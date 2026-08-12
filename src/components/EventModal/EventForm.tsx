@@ -58,6 +58,7 @@ export default function EventForm({
         onChange={(value) => onChange({ tipo: value })}
         options={TIPOS.map((tipo) => ({ value: tipo, label: tipo }))}
         placeholder="Selecciona un tipo"
+        required
         height={52}
         radius={12}
         paddingX={16}
@@ -92,6 +93,7 @@ export default function EventForm({
           value={values.lugar}
           onChange={(value) => onChange({ lugar: value })}
           placeholder="Lugar del evento"
+          required
           height={52}
           radius={12}
           paddingX={16}
