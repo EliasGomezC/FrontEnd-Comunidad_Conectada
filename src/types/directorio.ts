@@ -1,3 +1,8 @@
+export interface DirectorioGaleriaItem {
+  id: string;
+  url: string;
+}
+
 export interface DirectorioContacto {
   id: string;
   privada: string;
@@ -8,6 +13,7 @@ export interface DirectorioContacto {
   descripcion?: string;
   ubicacion?: string;
   imagenes?: string;
+  galeria?: DirectorioGaleriaItem[];
   status: string;
 }
 
@@ -18,7 +24,11 @@ export interface DirectorioFilter {
   page?: number;
 }
 
-export type DirectorioPayload = Omit<DirectorioContacto, 'id' | 'status' | 'imagenes'> & { imagenes?: File | null };
+export type DirectorioPayload = Omit<DirectorioContacto, 'id' | 'status' | 'imagenes' | 'galeria'> & {
+  imagenes?: File | null;
+  galeria_archivos?: File[];
+  galeria_eliminar?: string[];
+};
 
 export interface DirectorioResponse {
   count: number;

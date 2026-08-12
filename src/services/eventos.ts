@@ -5,7 +5,16 @@ import type { Evento, EventoFilter, EventoPayload, EventosResponse } from '@/typ
 function toFormData(data: Partial<EventoPayload>) {
   const formData = new FormData();
   Object.entries(data).forEach(([key, value]) => {
-    if (value !== undefined && value !== null && value !== '') formData.append(key, value instanceof File ? value : String(value));
+    if (value === undefined || value === null || value === '') return;
+    if (key === 'galeria_archivos' && Array.isArray(value)) {
+      value.forEach((file) => formData.append(key, file));
+      return;
+    }
+    if (key === 'galeria_eliminar' && Array.isArray(value)) {
+      value.forEach((id) => formData.append(key, id));
+      return;
+    }
+    formData.append(key, value instanceof File ? value : String(value));
   });
   return formData;
 }

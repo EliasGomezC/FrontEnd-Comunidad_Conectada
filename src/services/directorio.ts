@@ -13,7 +13,16 @@ export async function getDirectorio(
 function toFormData(data: Partial<DirectorioPayload>) {
   const formData = new FormData();
   Object.entries(data).forEach(([key, value]) => {
-    if (value !== undefined && value !== null) formData.append(key, value instanceof File ? value : String(value));
+    if (value === undefined || value === null) return;
+    if (key === 'galeria_archivos' && Array.isArray(value)) {
+      value.forEach((file) => formData.append(key, file));
+      return;
+    }
+    if (key === 'galeria_eliminar' && Array.isArray(value)) {
+      value.forEach((id) => formData.append(key, id));
+      return;
+    }
+    formData.append(key, value instanceof File ? value : String(value));
   });
   return formData;
 }

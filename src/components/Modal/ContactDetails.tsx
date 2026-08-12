@@ -4,7 +4,7 @@ import { useRef } from "react";
 import { IoCallOutline, IoImageOutline, IoLocationOutline } from "react-icons/io5";
 import type { DirectorioContacto } from "@/types/directorio";
 import { colors } from "./tokens";
-import ContactGallery from "./ContactGallery";
+import GalleryDisplay from "@/components/ui/GalleryDisplay";
 import ContactLocation from "./ContactLocation";
 
 interface ContactDetailsProps {
@@ -12,7 +12,6 @@ interface ContactDetailsProps {
 }
 
 export default function ContactDetails({ contact }: ContactDetailsProps) {
-  const images = contact.imagenes ? [contact.imagenes] : [];
   const locationRef = useRef<HTMLDivElement>(null);
 
   return (
@@ -37,7 +36,7 @@ export default function ContactDetails({ contact }: ContactDetailsProps) {
             <IoImageOutline size={48} />
           </div>
         )}
-        <ContactGallery images={images} size={64} />
+        <GalleryDisplay images={contact.galeria} size={64} />
       </div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
