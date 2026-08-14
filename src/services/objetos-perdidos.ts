@@ -11,6 +11,8 @@ export async function crearObjeto(token:string,data:CrearObjeto){
   const body=new FormData();
   Object.entries(data).forEach(([key,value])=>{
     if(value===undefined||value===null||key==='preguntas')return;
+    if(key==='galeria_archivos'&&Array.isArray(value)){value.forEach(file=>body.append(key,file));return;}
+    if(key==='galeria_eliminar'&&Array.isArray(value)){value.forEach(id=>body.append(key,id));return;}
     body.append(key,value instanceof File?value:String(value));
   });
   if(data.preguntas)body.append('preguntas_json',JSON.stringify(data.preguntas));
@@ -20,6 +22,8 @@ export async function actualizarObjeto(token:string,id:string,data:Partial<Crear
   const body=new FormData();
   Object.entries(data).forEach(([key,value])=>{
     if(value===undefined||value===null||key==='preguntas')return;
+    if(key==='galeria_archivos'&&Array.isArray(value)){value.forEach(file=>body.append(key,file));return;}
+    if(key==='galeria_eliminar'&&Array.isArray(value)){value.forEach(id=>body.append(key,id));return;}
     body.append(key,value instanceof File?value:String(value));
   });
   if(data.preguntas)body.append('preguntas_json',JSON.stringify(data.preguntas));

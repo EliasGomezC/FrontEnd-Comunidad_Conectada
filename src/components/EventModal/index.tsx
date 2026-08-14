@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from "react";
 import Button from "@/components/Button";
 import type { Evento, EventoPayload } from "@/types/eventos";
+import type { GalleryStoredImage } from "@/components/ui/GalleryInput";
 import EventBaseModal from "./BaseModal";
 import EventForm, { type EventFormValues } from "./EventForm";
 
@@ -60,6 +61,11 @@ export default function EventModal({
   );
   const [preview, setPreview] = useState<string | null>(event?.imagen || null);
   const [objectUrl, setObjectUrl] = useState<string | null>(null);
+  const [galleryImages] = useState<GalleryStoredImage[]>(
+    event?.galeria || []
+  );
+  const [galleryFiles, setGalleryFiles] = useState<File[]>([]);
+  const [galleryRemoved, setGalleryRemoved] = useState<string[]>([]);
 
   const update = (patch: Partial<EventFormValues>) =>
     setValues((current) => ({ ...current, ...patch }));
@@ -73,6 +79,11 @@ export default function EventModal({
     setPreview(file ? URL.createObjectURL(file) : event?.imagen || null);
   };
 
+  const handleGalleryChange = (files: File[], removedIds: string[]) => {
+    setGalleryFiles(files);
+    setGalleryRemoved(removedIds);
+  };
+
   const handleSubmit = (formEvent: FormEvent) => {
     formEvent.preventDefault();
     const payload: EventoPayload = {
@@ -83,6 +94,8 @@ export default function EventModal({
       ubicacion: values.lugar,
       capacidad: values.capacidad ? Number(values.capacidad) : null,
       imagen: values.imagen || undefined,
+      galeria_archivos: galleryFiles.length ? galleryFiles : undefined,
+      galeria_eliminar: galleryRemoved.length ? galleryRemoved : undefined,
     };
     onSubmit(payload);
   };
@@ -134,6 +147,8 @@ export default function EventModal({
           onChange={update}
           preview={preview}
           onImageChange={handleImage}
+          gallery={galleryImages}
+          onGalleryChange={handleGalleryChange}
         />
       </form>
     </EventBaseModal>

@@ -142,6 +142,11 @@ export default function EventosPage() {
                 ) : (
                   <div className="grid h-full w-full place-items-center bg-slate-100 text-slate-300"><IoImageOutline size={40} /></div>
                 )}
+                {item.galeria && item.galeria.length > 0 && (
+                  <span className="absolute bottom-3 right-3 z-10 rounded-full bg-black/60 px-2 py-0.5 text-xs font-bold text-white">
+                    {item.galeria.length + 1} fotos
+                  </span>
+                )}
               </div>
             </article>
           );

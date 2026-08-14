@@ -2,9 +2,10 @@
 
 import Input from "@/components/Input";
 import Select from "@/components/Select";
+import ImageUploader from "@/components/ui/ImageUploader";
+import GalleryInput, { type GalleryStoredImage } from "@/components/ui/GalleryInput";
 import type { DirectorioPayload } from "@/types/directorio";
 import { labelStyle } from "./tokens";
-import ContactGallery from "./ContactGallery";
 import ContactLocation from "./ContactLocation";
 
 const CATEGORIES = [
@@ -23,17 +24,19 @@ const CATEGORIES = [
 interface ContactFormProps {
   form: DirectorioPayload;
   onChange: (patch: Partial<DirectorioPayload>) => void;
-  images: string[];
-  onAddImages: (files: File[]) => void;
-  onRemoveImage: (index: number) => void;
+  mainImage?: string | null;
+  onMainImageChange: (file: File | null) => void;
+  gallery?: GalleryStoredImage[];
+  onGalleryChange: (files: File[], removedIds: string[]) => void;
 }
 
 export default function ContactForm({
   form,
   onChange,
-  images,
-  onAddImages,
-  onRemoveImage,
+  mainImage,
+  onMainImageChange,
+  gallery,
+  onGalleryChange,
 }: ContactFormProps) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
@@ -75,13 +78,13 @@ export default function ContactForm({
       />
 
       <div>
+        <span style={labelStyle}>Imagen principal</span>
+        <ImageUploader image={mainImage} onChange={onMainImageChange} height={160} />
+      </div>
+
+      <div>
         <span style={labelStyle}>Galería de imágenes</span>
-        <ContactGallery
-          images={images}
-          editable
-          onAdd={onAddImages}
-          onRemove={onRemoveImage}
-        />
+        <GalleryInput images={gallery} onChange={onGalleryChange} />
       </div>
 
       <div>

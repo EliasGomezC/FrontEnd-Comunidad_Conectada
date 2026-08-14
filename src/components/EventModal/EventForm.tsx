@@ -3,6 +3,7 @@
 import Input from "@/components/Input";
 import Select from "@/components/Select";
 import FormSection from "@/components/ui/FormSection";
+import GalleryInput, { type GalleryStoredImage } from "@/components/ui/GalleryInput";
 import ImageUploader from "./ImageUploader";
 
 export interface EventFormValues {
@@ -31,6 +32,8 @@ interface EventFormProps {
   onChange: (patch: Partial<EventFormValues>) => void;
   preview?: string | null;
   onImageChange: (file: File | null) => void;
+  gallery?: GalleryStoredImage[];
+  onGalleryChange: (files: File[], removedIds: string[]) => void;
 }
 
 export default function EventForm({
@@ -38,6 +41,8 @@ export default function EventForm({
   onChange,
   preview,
   onImageChange,
+  gallery,
+  onGalleryChange,
 }: EventFormProps) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
@@ -122,8 +127,12 @@ export default function EventForm({
         paddingX={16}
       />
 
-      <FormSection label="Subir Imagen">
+      <FormSection label="Imagen principal">
         <ImageUploader image={preview} onChange={onImageChange} />
+      </FormSection>
+
+      <FormSection label="Galería de imágenes">
+        <GalleryInput images={gallery} onChange={onGalleryChange} />
       </FormSection>
     </div>
   );

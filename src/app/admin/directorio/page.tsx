@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState, type FormEvent } from "react"
 import { useAuth } from "@/features/authentication/AuthContext";
 import { createContacto, deleteContacto, getDirectorio, updateContacto } from "@/services/directorio";
 import type { DirectorioContacto, DirectorioPayload } from "@/types/directorio";
+import type { GalleryStoredImage } from "@/components/ui/GalleryInput";
 import Sidebar from "@/components/Sidebar";
 import SearchBar from "@/components/SearchBar";
 import Button from "@/components/Button";
@@ -29,11 +30,14 @@ export default function DirectorioPage() {
   const [modalType, setModalType] = useState<ModalType | null>(null);
   const [selectedContact, setSelectedContact] = useState<DirectorioContacto | null>(null);
   const [form, setForm] = useState<DirectorioPayload>(empty());
-  const [preview, setPreview] = useState<string[]>([]);
+  const [mainPreview, setMainPreview] = useState<string | null>(null);
+  const [galleryImages, setGalleryImages] = useState<GalleryStoredImage[]>([]);
+  const [galleryFiles, setGalleryFiles] = useState<File[]>([]);
+  const [galleryRemoved, setGalleryRemoved] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
-  const previewUrls = useRef<string[]>([]);
+  const mainObjectUrl = useRef<string | null>(null);
 
-  const revokePreviews = () => { previewUrls.current.forEach((url) => URL.revokeObjectURL(url)); previewUrls.current = []; };
+  const revokeMainPreview = () => { if (mainObjectUrl.current) { URL.revokeObjectURL(mainObjectUrl.current); mainObjectUrl.current = null; } };
 
   const load = useCallback(async () => { if (!token) return; try { setLoading(true); const data = await getDirectorio(token); setItems(data.results); setError(null); } catch (cause) { setError(cause instanceof Error ? cause.message : "No se pudo cargar el directorio."); } finally { setLoading(false); } }, [token]);
   useEffect(() => {
@@ -41,17 +45,30 @@ export default function DirectorioPage() {
     void load();
   }, [load]);
 
-  const close = () => { revokePreviews(); setModalType(null); setSelectedContact(null); setForm(empty()); setPreview([]); };
-  const openCreate = () => { setForm(empty(privada)); setSelectedContact(null); setPreview([]); setModalType("create"); };
+  const close = () => { revokeMainPreview(); setModalType(null); setSelectedContact(null); setForm(empty()); setMainPreview(null); setGalleryImages([]); setGalleryFiles([]); setGalleryRemoved([]); };
+  const openCreate = () => { setForm(empty(privada)); setSelectedContact(null); setMainPreview(null); setGalleryImages([]); setGalleryFiles([]); setGalleryRemoved([]); setModalType("create"); };
   const openView = (item: DirectorioContacto) => { setSelectedContact(item); setModalType("view"); };
-  const openEdit = (item: DirectorioContacto) => { setSelectedContact(item); setForm({ privada: item.privada, nombre: item.nombre, categorias: item.categorias, num_tel: item.num_tel, codigo: item.codigo, descripcion: item.descripcion || "", ubicacion: item.ubicacion || "" }); setPreview(item.imagenes ? [item.imagenes] : []); setModalType("edit"); };
+  const openEdit = (item: DirectorioContacto) => {
+    setSelectedContact(item);
+    setForm({ privada: item.privada, nombre: item.nombre, categorias: item.categorias, num_tel: item.num_tel, codigo: item.codigo, descripcion: item.descripcion || "", ubicacion: item.ubicacion || "" });
+    setMainPreview(item.imagenes || null);
+    setGalleryImages(item.galeria || []);
+    setGalleryFiles([]);
+    setGalleryRemoved([]);
+    setModalType("edit");
+  };
   const openDelete = (item: DirectorioContacto) => { setSelectedContact(item); setModalType("delete"); };
 
   const submit = async () => {
     if (!token || !modalType) return;
     setSaving(true); setError(null);
     try {
-      const data: DirectorioPayload = { ...form, privada: form.privada || privada };
+      const data: DirectorioPayload = {
+        ...form,
+        privada: form.privada || privada,
+        galeria_archivos: galleryFiles.length ? galleryFiles : undefined,
+        galeria_eliminar: galleryRemoved.length ? galleryRemoved : undefined,
+      };
       if (modalType === "edit" && selectedContact) await updateContacto(token, selectedContact.id, data);
       else await createContacto(token, data);
       close(); await load();
@@ -73,14 +90,22 @@ export default function DirectorioPage() {
   };
 
   const updateForm = (patch: Partial<DirectorioPayload>) => setForm((current) => ({ ...current, ...patch }));
-  const onAddImages = (files: File[]) => {
-    if (!files.length) return;
-    revokePreviews();
-    updateForm({ imagenes: files[0] });
-    previewUrls.current = [URL.createObjectURL(files[0])];
-    setPreview(previewUrls.current);
+
+  const handleMainImage = (file: File | null) => {
+    revokeMainPreview();
+    updateForm({ imagenes: file });
+    if (file) {
+      mainObjectUrl.current = URL.createObjectURL(file);
+      setMainPreview(mainObjectUrl.current);
+    } else {
+      setMainPreview(selectedContact?.imagenes || null);
+    }
   };
-  const onRemoveImage = () => { revokePreviews(); updateForm({ imagenes: null }); setPreview([]); };
+
+  const handleGalleryChange = (files: File[], removedIds: string[]) => {
+    setGalleryFiles(files);
+    setGalleryRemoved(removedIds);
+  };
 
   const categories = Array.from(new Set(items.map((item) => item.categorias).filter(Boolean)));
   const filtered = items.filter((item) =>
@@ -175,7 +200,14 @@ export default function DirectorioPage() {
     >
       {(modalType === "create" || modalType === "edit") && (
         <form id="contact-form" onSubmit={handleSubmit}>
-          <ContactForm form={form} onChange={updateForm} images={preview} onAddImages={onAddImages} onRemoveImage={onRemoveImage} />
+          <ContactForm
+            form={form}
+            onChange={updateForm}
+            mainImage={mainPreview}
+            onMainImageChange={handleMainImage}
+            gallery={galleryImages}
+            onGalleryChange={handleGalleryChange}
+          />
         </form>
       )}
       {modalType === "view" && selectedContact && <ContactDetails contact={selectedContact} />}

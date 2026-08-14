@@ -1,3 +1,8 @@
+export interface EventoGaleriaItem {
+  id: string;
+  url: string;
+}
+
 export interface Evento {
   id: string;
   privada: string;
@@ -8,6 +13,7 @@ export interface Evento {
   ubicacion?: string;
   capacidad?: number | null;
   imagen?: string;
+  galeria?: EventoGaleriaItem[];
   status: string;
   created_at: string;
   updated_at: string;
@@ -26,4 +32,8 @@ export interface EventosResponse {
   results: Evento[];
 }
 
-export type EventoPayload = Omit<Evento, 'id' | 'status' | 'created_at' | 'updated_at' | 'imagen'> & { imagen?: File | null };
+export type EventoPayload = Omit<Evento, 'id' | 'status' | 'created_at' | 'updated_at' | 'imagen' | 'galeria'> & {
+  imagen?: File | null;
+  galeria_archivos?: File[];
+  galeria_eliminar?: string[];
+};
