@@ -1,164 +1,87 @@
-import type { NextPage } from "next";
-import Image from "next/image";
-import Link from 'next/link';
-import '../login/fondo.css';
+"use client";
 
-const Register: NextPage = () => {
-    return (
-        <div
-            className="w-full min-h-screen relative flex flex-col items-center justify-center py-[20px] px-[30px] box-border bg-cover bg-no-repeat bg-top leading-[normal] tracking-[normal]"
-            style={{
-                backgroundImage: 'linear-gradient(120deg, rgba(245, 247, 250, 0.8) 0%, rgba(10, 73, 106, 0.8) 100%), url(/Login-2@3x.png)'
-            }}
-        >
-            {/* Capa de Cuadrícula: Totalmente independiente, fija en el fondo */}
-            <div className="fondo-cuadricula absolute inset-0 z-0 pointer-events-none" />
+import Link from "next/link";
+import { FormEvent, useState } from "react";
+import { useAuth } from "@/features/authentication/AuthContext";
+import "../login/fondo.css";
 
-            {/* Formulario de Register: Ampliado y con scroll interno */}
-            <form className="m-0 w-full relative z-10 shadow-[0px_7.1px_16.8px_4.42px_rgba(0,_0,_0,_0.25)] rounded-[26.5px] bg-[#f5f7fa] flex flex-col items-center justify-center py-[29px] px-9 box-border gap-[20px] max-w-[800px] max-h-[85vh] overflow-y-auto shrink-0 mq578:max-w-full">
+export default function RegisterPage() {
+  const { register } = useAuth();
+  const [form, setForm] = useState({
+    nombres: "",
+    apellidos: "",
+    email: "",
+    telefono: "",
+    numero_casa: "",
+    codigo_postal: "",
+    password: "",
+    password_confirm: "",
+  });
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-                {/* Botón Volver y Logo */}
-                <div className="w-full flex items-center gap-[20px] mb-4">
-                    <div className="flex-1 shadow-[0px_1px_4px_rgba(0,_0,_0,_0.25)] rounded-[25px] bg-[#c7e7fe] flex items-center justify-center pt-1 px-4 pb-1 box-border">
-                        <Image
-                            className="object-contain"
-                            loading="lazy"
-                            width={250}
-                            height={65}
-                            alt="Logo Comunidad Conectada"
-                            src="/assets/img/logoComunidadConectada.png"
-                        />
-                    </div>
-                </div>
+  const update = (field: keyof typeof form) => (event: React.ChangeEvent<HTMLInputElement>) => {
+    setForm((current) => ({ ...current, [field]: event.target.value }));
+  };
 
-                {/* Sección de Campos */}
-                <div className="self-stretch flex flex-wrap gap-x-[20px] gap-y-[15px]">
+  const submit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setError("");
+    if (form.password !== form.password_confirm) {
+      setError("Las contraseñas no coinciden.");
+      return;
+    }
+    setLoading(true);
+    try {
+      await register(form);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "No se pudo crear la cuenta.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-                    {/* Primer Nombre */}
-                    <div className="flex-[1_1_200px] flex flex-col gap-2">
-                        <b className="relative text-[15.8px] leading-[22.5px] font-['Satoshi_Variable'] text-[#374151]">
-                            Primer Nombre <span className="text-red-500">*</span>
-                        </b>
-                        <div className="h-[51.7px] rounded-[13.5px] bg-[#f9fafb] border-[#e5e7eb] border-solid border-[1.1px] flex items-center px-[18px]">
-                            <input className="w-full [border:none] [outline:none] bg-[transparent] font-['Satoshi_Variable'] text-lg text-[#000000]" placeholder="Escribe tu primer nombre" type="text" />
-                        </div>
-                    </div>
+  const fields: Array<[keyof typeof form, string, string, string]> = [
+    ["nombres", "Nombres", "Escribe tus nombres", "text"],
+    ["apellidos", "Apellidos", "Escribe tus apellidos", "text"],
+    ["email", "Correo electrónico", "tu@correo.com", "email"],
+    ["telefono", "Teléfono", "664-123-4567", "tel"],
+    ["numero_casa", "Número de casa", "Ej. 24", "text"],
+    ["codigo_postal", "Código postal", "Ej. 22000", "text"],
+    ["password", "Contraseña", "Mínimo 8 caracteres", "password"],
+    ["password_confirm", "Confirmar contraseña", "Repite tu contraseña", "password"],
+  ];
 
-                    {/* Segundo Nombre */}
-                    <div className="flex-[1_1_200px] flex flex-col gap-2">
-                        <b className="relative text-[15.8px] leading-[22.5px] font-['Satoshi_Variable'] text-[#374151]">
-                            Segundo Nombre
-                        </b>
-                        <div className="h-[51.7px] rounded-[13.5px] bg-[#f9fafb] border-[#e5e7eb] border-solid border-[1.1px] flex items-center px-[18px]">
-                            <input className="w-full [border:none] [outline:none] bg-[transparent] font-['Satoshi_Variable'] text-lg text-[#000000]" placeholder="Escribe tu segundo nombre" type="text" />
-                        </div>
-                    </div>
-
-                    {/* Apellido Paterno */}
-                    <div className="flex-[1_1_200px] flex flex-col gap-2">
-                        <b className="relative text-[15.8px] leading-[22.5px] font-['Satoshi_Variable'] text-[#374151]">
-                            Apellido Paterno
-                        </b>
-                        <div className="h-[51.7px] rounded-[13.5px] bg-[#f9fafb] border-[#e5e7eb] border-solid border-[1.1px] flex items-center px-[18px]">
-                            <input className="w-full [border:none] [outline:none] bg-[transparent] font-['Satoshi_Variable'] text-lg text-[#000000]" placeholder="Escribe apellido paterno" type="text" />
-                        </div>
-                    </div>
-
-                    {/* Apellido Materno */}
-                    <div className="flex-[1_1_200px] flex flex-col gap-2">
-                        <b className="relative text-[15.8px] leading-[22.5px] font-['Satoshi_Variable'] text-[#374151]">
-                            Apellido Materno <span className="text-red-500">*</span>
-                        </b>
-                        <div className="h-[51.7px] rounded-[13.5px] bg-[#f9fafb] border-[#e5e7eb] border-solid border-[1.1px] flex items-center px-[18px]">
-                            <input className="w-full [border:none] [outline:none] bg-[transparent] font-['Satoshi_Variable'] text-lg text-[#000000]" placeholder="Escribe apellido materno" type="text" />
-                        </div>
-                    </div>
-
-                    {/* Correo Electrónico */}
-                    <div className="w-full flex flex-col gap-2">
-                        <b className="relative text-[15.8px] leading-[22.5px] font-['Satoshi_Variable'] text-[#374151]">
-                            Correo electrónico <span className="text-red-500">*</span>
-                        </b>
-                        <div className="h-[51.7px] rounded-[13.5px] bg-[#f9fafb] border-[#e5e7eb] border-solid border-[1.1px] flex items-center px-[18px]">
-                            <input className="w-full [border:none] [outline:none] bg-[transparent] font-['Satoshi_Variable'] text-lg text-[#000000]" placeholder="comunidadconectada@gmail.com" type="email" />
-                        </div>
-                    </div>
-
-                    {/* Número de teléfono */}
-                    <div className="flex-[1_1_150px] flex flex-col gap-2">
-                        <b className="relative text-[15.8px] leading-[22.5px] font-['Satoshi_Variable'] text-[#374151]">
-                            Número de teléfono <span className="text-red-500">*</span>
-                        </b>
-                        <div className="h-[51.7px] rounded-[13.5px] bg-[#f9fafb] border-[#e5e7eb] border-solid border-[1.1px] flex items-center px-[18px]">
-                            <input className="w-full [border:none] [outline:none] bg-[transparent] font-['Satoshi_Variable'] text-lg text-[#000000]" placeholder="664-123-4567" type="tel" />
-                        </div>
-                    </div>
-
-                    {/* Núm de casa */}
-                    <div className="flex-[1_1_150px] flex flex-col gap-2">
-                        <b className="relative text-[15.8px] leading-[22.5px] font-['Satoshi_Variable'] text-[#374151]">
-                            Núm de casa <span className="text-red-500">*</span>
-                        </b>
-                        <div className="h-[51.7px] rounded-[13.5px] bg-[#f9fafb] border-[#e5e7eb] border-solid border-[1.1px] flex items-center px-[18px]">
-                            <input className="w-full [border:none] [outline:none] bg-[transparent] font-['Satoshi_Variable'] text-lg text-[#000000]" placeholder="Escribe tu número de casa" type="text" />
-                        </div>
-                    </div>
-
-                    {/* Código Postal */}
-                    <div className="flex-[1_1_150px] flex flex-col gap-2">
-                        <b className="relative text-[15.8px] leading-[22.5px] font-['Satoshi_Variable'] text-[#374151]">
-                            Código Postal <span className="text-red-500">*</span>
-                        </b>
-                        <div className="h-[51.7px] rounded-[13.5px] bg-[#f9fafb] border-[#e5e7eb] border-solid border-[1.1px] flex items-center px-[18px]">
-                            <input className="w-full [border:none] [outline:none] bg-[transparent] font-['Satoshi_Variable'] text-lg text-[#000000]" placeholder="Escribe tu código postal" type="text" />
-                        </div>
-                    </div>
-
-                    {/* Contraseña */}
-                    <div className="flex-[1_1_300px] flex flex-col gap-2">
-                        <b className="relative text-[15.8px] leading-[22.5px] font-['Satoshi_Variable'] text-[#374151]">
-                            Contraseña <span className="text-red-500">*</span>
-                        </b>
-                        <div className="h-[51.7px] rounded-[13.5px] bg-[#f9fafb] border-[#e5e7eb] border-solid border-[1.1px] flex items-center px-[18px]">
-                            <input className="w-full [border:none] [outline:none] bg-[transparent] font-['Satoshi_Variable'] text-lg text-[#000000]" placeholder="*******" type="password" />
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-black ml-2"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0" /><circle cx="12" cy="12" r="3" /></svg>
-                        </div>
-                    </div>
-
-                    {/* Confirmar contraseña */}
-                    <div className="flex-[1_1_300px] flex flex-col gap-2">
-                        <b className="relative text-[15.8px] leading-[22.5px] font-['Satoshi_Variable'] text-[#374151]">
-                            Confirmar contraseña <span className="text-red-500">*</span>
-                        </b>
-                        <div className="h-[51.7px] rounded-[13.5px] bg-[#f9fafb] border-[#e5e7eb] border-solid border-[1.1px] flex items-center px-[18px]">
-                            <input className="w-full [border:none] [outline:none] bg-[transparent] font-['Satoshi_Variable'] text-lg text-[#000000]" placeholder="*******" type="password" />
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-black ml-2"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0" /><circle cx="12" cy="12" r="3" /></svg>
-                        </div>
-                    </div>
-
-                </div>
-
-                {/* Botón Registrarte */}
-                <Link href="/lobby" className="cursor-pointer [border:none] p-0 bg-[transparent] w-full mt-4" type="submit">
-                    <div className="w-full rounded-[10.6px] bg-[#0a496a] hover:bg-[#3A7594] flex items-center justify-center pt-[14.1px] pb-[13.9px] box-border">
-                        <div className="relative text-[18.2px] leading-[150%] font-black font-['Satoshi_Variable'] text-[#f5f7fa] text-center">
-                            
-                            Registrarte
-                            
-                        </div>
-                    </div>
-                </Link>
-
-                {/* Enlace a Iniciar Sesión */}
-                <div className="w-full flex items-center justify-center text-[18.2px] leading-[150%]">
-                    <span className="font-light font-['Satoshi_Variable'] text-[#000]">¿Ya tienes una cuenta? </span>
-                    <Link href="/login" className="font-medium font-['Satoshi_Variable'] text-[#0a496a] hover:text-[#3A7594] ml-1">
-                        Iniciar Sesión
-                    </Link>
-                </div>
-            </form>
+  return (
+    <main className="min-h-screen bg-[#e0e5eb] flex items-center justify-center p-6">
+      <form onSubmit={submit} className="w-full max-w-2xl relative z-10 rounded-[26px] bg-[#f5f7fa] p-8 shadow-xl">
+        <div className="mb-7 text-center">
+          <h1 className="text-3xl font-extrabold text-[#0a496a]">Crear cuenta</h1>
+          <p className="mt-2 text-gray-600">Regístrate como habitante y después únete o crea una privada.</p>
         </div>
-    );
-};
-
-export default Register;
+        <div className="grid gap-4 sm:grid-cols-2">
+          {fields.map(([field, label, placeholder, type]) => (
+            <label key={field} className="flex flex-col gap-2 text-sm font-semibold text-[#374151]">
+              {label}
+              <input
+                required={!["telefono", "codigo_postal"].includes(field)}
+                type={type}
+                value={form[field]}
+                onChange={update(field)}
+                placeholder={placeholder}
+                className="h-12 rounded-xl border border-gray-200 bg-white px-4 text-base font-normal outline-none focus:border-[#0a496a]"
+              />
+            </label>
+          ))}
+        </div>
+        {error && <p role="alert" className="mt-5 rounded-lg bg-red-50 p-3 text-center text-sm text-red-700">{error}</p>}
+        <button disabled={loading} className="mt-6 h-12 w-full rounded-xl bg-[#0a496a] font-bold text-white hover:bg-[#3a7594] disabled:opacity-50">
+          {loading ? "Creando cuenta..." : "Registrarme"}
+        </button>
+        <p className="mt-5 text-center text-gray-700">
+          ¿Ya tienes una cuenta? <Link href="/login" className="font-semibold text-[#0a496a]">Iniciar sesión</Link>
+        </p>
+      </form>
+    </main>
+  );
+}

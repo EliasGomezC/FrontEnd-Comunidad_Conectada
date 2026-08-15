@@ -1,5 +1,5 @@
 export interface LostObject {
-  id: number;
+  id: string | number;
   title: string;
   description: string;
   date: string;

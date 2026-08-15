@@ -1,5 +1,13 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { AuthProvider } from "@/features/authentication/AuthContext";
+import localFont from "next/font/local";
+
+const satoshi = localFont({
+  src: "../../public/assets/font/Satoshi-Variable.ttf",
+  variable: "--font-satoshi",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: {
@@ -22,7 +30,9 @@ export default function RootLayout({
       lang="es"
       className="h-full antialiased"
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className={`${satoshi.variable} ${satoshi.className} min-h-full flex flex-col`}>
+        <AuthProvider>{children}</AuthProvider>
+      </body>
     </html>
   );
 }

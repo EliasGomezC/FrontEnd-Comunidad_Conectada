@@ -4,26 +4,33 @@ import type { FormEvent } from "react";
 import { useState } from "react";
 import Image from "next/image";
 import Link from 'next/link';
-import { useRouter } from "next/navigation";
+import { useAuth } from "@/features/authentication/AuthContext";
 import './fondo.css';
 
 const Login = () => {
-  const router = useRouter();
+  const { login } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!email.trim() || !password.trim()) {
-      setError("Ingresa tu correo electrónico y contraseña.");
+      setError("Ingresa tu correo y contraseña.");
       return;
     }
 
-    // La autenticación real se conectará cuando exista el backend.
-    localStorage.setItem("comunidad-conectada-auth", "true");
-    localStorage.setItem("comunidad-conectada-user", email.trim());
-    router.push("/admin/directorio");
+    setIsLoading(true);
+    setError("");
+
+    try {
+      await login({ email: email.trim(), password: password.trim() });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error al iniciar sesión");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -60,13 +67,13 @@ const Login = () => {
         <div className="self-stretch flex flex-col items-start pt-[8.8px] px-0 pb-0 box-border gap-[9px] max-w-full">
           <div className="self-stretch flex flex-col items-start">
             <b className="self-stretch relative text-[15.8px] leading-[22.5px] font-['Satoshi_Variable'] text-[#374151] text-left">
-              Correo electronico
+              Correo electrónico
             </b>
           </div>
           <div className="self-stretch h-[51.7px] rounded-[13.5px] bg-[#f9fafb] border-[#e5e7eb] border-solid border-[1.1px] box-border overflow-hidden shrink-0 flex items-start justify-center py-2.5 px-[18px] max-w-full">
             <input
               className="w-full [border:none] [outline:none] bg-[transparent] h-[27px] flex-1 flex items-center font-['Satoshi_Variable'] text-lg text-[#000000] min-w-[250px] max-w-full"
-              placeholder="comunidadconectada@gmail.com"
+              placeholder="tu@correo.com"
               type="email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
@@ -97,12 +104,13 @@ const Login = () => {
         </div>
 
         <button
-          className="cursor-pointer [border:none] py-0 px-px bg-[transparent] self-stretch flex items-start box-border max-w-full"
+          className="cursor-pointer [border:none] py-0 px-px bg-[transparent] self-stretch flex items-start box-border max-w-full disabled:opacity-50 disabled:cursor-not-allowed"
           type="submit"
+          disabled={isLoading}
         >
           <div className="flex-1 rounded-[10.6px] bg-[#0a496a] hover:bg-[#3A7594] flex items-center justify-center pt-[14.1px] px-0 pb-[13.9px] box-border max-w-full">
             <div className="flex-1 relative text-[18.2px] leading-[150%] font-black font-['Satoshi_Variable'] text-[#f5f7fa] text-center inline-block max-w-full">
-              Iniciar Sesión
+              {isLoading ? "Iniciando..." : "Iniciar Sesión"}
             </div>
           </div>
         </button>

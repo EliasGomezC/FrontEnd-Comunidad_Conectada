@@ -1,25 +1,30 @@
 "use client";
 
-import { useEffect, useSyncExternalStore } from "react";
+import { useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import { useAuth } from "@/features/authentication/AuthContext";
 
 export default function AdminLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  const { isAuthenticated, isModerator, isLoading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
-  const ready = useSyncExternalStore(
-    () => () => undefined,
-    () => localStorage.getItem("comunidad-conectada-auth") === "true",
-    () => false,
-  );
 
   useEffect(() => {
-    if (!ready) {
+    if (!isLoading && !isAuthenticated) {
       router.replace(`/login?redirect=${encodeURIComponent(pathname)}`);
+    } else if (!isLoading && isAuthenticated && !isModerator) {
+      router.replace('/lobby');
     }
-  }, [pathname, ready, router]);
+  }, [pathname, isAuthenticated, isModerator, isLoading, router]);
 
-  if (!ready) {
-    return <div className="min-h-screen bg-[#dfe5eb]" aria-busy="true" />;
+  if (isLoading) {
+    return <div className="min-h-screen bg-[#dfe5eb] flex items-center justify-center">
+      <div className="text-[#0a496a] text-xl">Cargando...</div>
+    </div>;
+  }
+
+  if (!isAuthenticated || !isModerator) {
+    return null;
   }
 
   return children;

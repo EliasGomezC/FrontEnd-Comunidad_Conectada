@@ -1,359 +1,45 @@
 "use client";
-
-import type { NextPage } from "next";
-import { useMemo, useState, type ChangeEvent, type FormEvent } from "react";
+import {FormEvent,useCallback,useEffect,useMemo,useState} from "react";
+import {IoAdd,IoClose,IoDocumentTextOutline,IoWarningOutline} from "react-icons/io5";
 import Sidebar from "@/components/Sidebar";
 import SearchBar from "@/components/SearchBar";
-import { IoCheckmarkCircleOutline, IoClose, IoDocumentTextOutline, IoImageOutline, IoLocationOutline } from "react-icons/io5";
+import {useAuth} from "@/features/authentication/AuthContext";
+import {concluirReporte,crearReporte,editarReporte,getIncidentesReportes,getReportes,getTiposReporte} from "@/services/reportes";
+import type {IncidenteReporte as Incidente,PrioridadReporte,Reporte,TipoReporte} from "@/types/reportes";
 
-interface Report {
-  id: number;
-  title: string;
-  category: string;
-  description: string;
-  location: string;
-  date: string;
-  status: "PENDIENTE" | "CONCLUIDO";
-  userId: number;
-  image?: string;
+const fmt=(v:string)=>new Intl.DateTimeFormat('es-MX',{dateStyle:'medium',timeStyle:'short'}).format(new Date(v));
+const priority:Record<PrioridadReporte,string>={baja:'bg-green-200 text-green-800',media:'bg-amber-200 text-amber-800',alta:'bg-red-200 text-red-800'};
+const states:Record<string,string>={pendiente:'Pendiente',en_proceso:'En proceso',resuelto:'Resuelto',concluido:'Concluido'};
+export default function ReportesAdmin(){
+ const{token,activeMembership}=useAuth();const[tab,setTab]=useState<'incidentes'|'reportes'>('incidentes');const[incidents,setIncidents]=useState<Incidente[]>([]);const[reports,setReports]=useState<Reporte[]>([]);const[types,setTypes]=useState<TipoReporte[]>([]);const[search,setSearch]=useState('');const[loading,setLoading]=useState(true);const[error,setError]=useState('');const[selectedIncident,setSelectedIncident]=useState<Incidente|null>(null);const[selectedReport,setSelectedReport]=useState<Reporte|null>(null);const[reportIncident,setReportIncident]=useState<Incidente|null>(null);const[editingReport,setEditingReport]=useState<Reporte|null>(null);
+ const load=useCallback(async()=>{if(!token||!activeMembership)return;setLoading(true);try{const[i,r,t]=await Promise.all([getIncidentesReportes(token,{privada:activeMembership.privada,search:search||undefined}),getReportes(token,{privada:activeMembership.privada,search:search||undefined}),getTiposReporte(token)]);setIncidents(i.results);setReports(r.results);setTypes(t);setError('')}catch(e){setError(e instanceof Error?e.message:'No se pudo cargar el módulo.')}finally{setLoading(false)}},[token,activeMembership,search]);
+ // eslint-disable-next-line react-hooks/set-state-in-effect
+ useEffect(()=>{void load()},[load]);
+ const pending=incidents;
+ return <div className="flex min-h-screen bg-[#dfe5eb]"><Sidebar activeItem="Reportes"/><main className="min-w-0 flex-1 p-8 text-[#0a496a]"><div className="flex flex-wrap items-end justify-between gap-5"><div><h1 className="text-4xl font-extrabold">Reportes e Incidentes</h1><p className="text-xl">Seguimiento de sucesos de la comunidad</p></div><button disabled={!pending.length} onClick={()=>setReportIncident(pending[0]||null)} className="flex items-center gap-2 rounded-xl bg-[#075574] px-6 py-4 font-bold text-white disabled:cursor-not-allowed disabled:opacity-40"><IoAdd/> Nuevo reporte</button></div><div className="mt-7 flex flex-wrap gap-4"><SearchBar value={search} onChange={e=>setSearch(e.target.value)} placeholder="Buscar por título, descripción o usuario" className="min-w-80 flex-1"/><button onClick={()=>setTab('incidentes')} className={`flex items-center gap-2 rounded-xl px-5 py-3 font-bold ${tab==='incidentes'?'bg-sky-300':'bg-white'}`}><IoWarningOutline/> Incidentes ({incidents.length})</button><button onClick={()=>setTab('reportes')} className={`flex items-center gap-2 rounded-xl px-5 py-3 font-bold ${tab==='reportes'?'bg-sky-300':'bg-white'}`}><IoDocumentTextOutline/> Reportes ({reports.length})</button></div>{error&&<p className="mt-5 rounded-xl bg-red-100 p-4 text-red-700">{error}</p>}{loading&&<p className="py-16 text-center text-xl">Cargando…</p>}
+ {!loading&&tab==='incidentes'&&<div className="mt-7 grid gap-5 xl:grid-cols-2">{incidents.map(i=><button key={i.id} onClick={()=>setSelectedIncident(i)} className="overflow-hidden rounded-2xl bg-white text-left shadow transition hover:-translate-y-1"><div className="flex min-h-60"><div className="flex-1 p-5"><div className="flex justify-between gap-2"><h2 className="text-xl font-bold">#{i.num} · {i.titulo}</h2><span className="h-fit rounded-lg bg-slate-200 px-3 py-1">{states[i.estado]}</span></div><div className="mt-3 flex gap-2"><span className={`rounded-lg px-3 py-1 capitalize ${priority[i.prioridad]}`}>Prioridad {i.prioridad}</span><span className="rounded-lg bg-sky-100 px-3 py-1">{i.tipo_detalle?.nombre}</span></div><p className="mt-4 line-clamp-2 text-slate-600">{i.descripcion}</p><p className="mt-3 text-sm"><b>Habitante:</b> {i.habitante.nombre}<br/><b>Suceso:</b> {fmt(i.fecha_incidente)}</p><p className={`mt-3 font-bold ${i.tiene_reporte?'text-green-700':'text-amber-700'}`}>{i.tiene_reporte?'Con reporte de seguimiento':'Requiere reporte'}</p></div>{i.evidencia&&<img src={i.evidencia} alt="Evidencia" className="w-52 object-cover"/>}</div></button>)}{!incidents.length&&<p className="col-span-2 rounded-2xl bg-white p-12 text-center">No hay incidentes registrados.</p>}</div>}
+ {!loading&&tab==='reportes'&&<div className="mt-7 grid gap-5 xl:grid-cols-2">{reports.map(r=><button key={r.id} onClick={()=>setSelectedReport(r)} className="overflow-hidden rounded-2xl bg-white text-left shadow transition hover:-translate-y-1"><div className="flex min-h-60"><div className="flex-1 p-5"><div className="flex justify-between gap-2"><h2 className="text-xl font-bold">Reporte #{r.num} · {r.titulo}</h2><span className={`h-fit rounded-lg px-3 py-1 ${r.estado==='concluido'?'bg-green-200':'bg-amber-200'}`}>{states[r.estado]}</span></div><div className="mt-3 flex gap-2"><span className={`rounded-lg px-3 py-1 capitalize ${priority[r.prioridad]}`}>Prioridad {r.prioridad}</span><span className="rounded-lg bg-sky-100 px-3 py-1">{r.tipo_detalle?.nombre}</span></div><p className="mt-4 line-clamp-2 text-slate-600">{r.descripcion}</p><p className="mt-3 text-sm"><b>Incidente:</b> #{r.incidente_detalle.num} {r.incidente_detalle.titulo}<br/><b>Moderador:</b> {r.moderador.nombre}</p></div>{r.evidencia&&<img src={r.evidencia} alt="Evidencia" className="w-52 object-cover"/>}</div></button>)}{!reports.length&&<p className="col-span-2 rounded-2xl bg-white p-12 text-center">Todavía no hay reportes de seguimiento.</p>}</div>}
+ {selectedIncident&&<IncidentDetail incident={selectedIncident} reports={reports.filter(report=>report.incidente===selectedIncident.id)} onClose={()=>setSelectedIncident(null)} onReport={()=>{setReportIncident(selectedIncident);setSelectedIncident(null)}} onViewReport={report=>{setSelectedIncident(null);setSelectedReport(report)}}/>}{reportIncident&&token&&<ReportModal token={token} incident={reportIncident} incidents={pending} types={types} onIncident={setReportIncident} onClose={()=>setReportIncident(null)} onSaved={()=>{setReportIncident(null);void load()}}/>}{selectedReport&&token&&<ReportDetail report={selectedReport} token={token} onClose={()=>setSelectedReport(null)} onConcluded={()=>{setSelectedReport(null);void load()}} onEdit={()=>{setEditingReport(selectedReport);setSelectedReport(null)}} onIncident={()=>{setSelectedReport(null);setSelectedIncident(incidents.find(item=>item.id===selectedReport.incidente)||null)}}/>}{editingReport&&token&&<EditReportModal report={editingReport} token={token} onClose={()=>setEditingReport(null)} onSaved={()=>{setEditingReport(null);void load()}}/>}</main></div>;
 }
 
-interface ResidentInfo {
-  fullName: string;
-  houseNumber: string;
-  phoneNumber: string;
+function IncidentDetail({incident,reports,onClose,onReport,onViewReport}:{incident:Incidente;reports:Reporte[];onClose:()=>void;onReport:()=>void;onViewReport:(report:Reporte)=>void}) {
+ return <Overlay onClose={onClose}><div className="flex justify-between"><div><h2 className="text-3xl font-bold">{incident.titulo}</h2><p>Incidente #{incident.num}</p></div><button onClick={onClose}><IoClose size={30}/></button></div><p className="mt-5">{incident.descripcion}</p><div className="mt-5 grid gap-3 sm:grid-cols-2"><p><b>Habitante:</b> {incident.habitante.nombre}</p><p><b>Teléfono:</b> {incident.habitante.telefono||'Sin teléfono'}</p><p><b>Fecha:</b> {fmt(incident.fecha_incidente)}</p><p><b>Ubicación:</b> {incident.ubicacion}</p></div>{incident.evidencia&&<img src={incident.evidencia} alt="Evidencia" className="mt-5 max-h-96 w-full rounded-2xl object-cover"/>}<section className="mt-5 rounded-2xl bg-slate-100 p-4"><h3 className="text-xl font-bold">Reportes realizados ({reports.length})</h3>{reports.length?<div className="mt-3 space-y-2">{reports.map(report=><button key={report.id} onClick={()=>onViewReport(report)} className="flex w-full items-center justify-between rounded-xl bg-white p-4 text-left shadow-sm hover:bg-sky-50"><span><b>#{report.num} · {report.titulo}</b><small className="mt-1 block">{report.moderador.nombre}</small></span><span className={`rounded-lg px-3 py-1 ${report.estado==='concluido'?'bg-green-200':'bg-amber-200'}`}>{states[report.estado]} →</span></button>)}</div>:<p className="mt-2 text-slate-500">Aún no se han realizado reportes.</p>}</section><div className="mt-6 grid grid-cols-2 gap-3"><button onClick={onClose} className="rounded-xl border p-3 font-bold">Cerrar</button><button onClick={onReport} className="rounded-xl bg-[#0a496a] p-3 font-bold text-white">Realizar nuevo reporte</button></div></Overlay>
 }
 
-interface NewReportForm {
-  title: string;
-  type: string;
-  priority: string;
-  date: string;
-  time: string;
-  description: string;
+function ReportModal({token,incident,incidents,onIncident,onClose,onSaved}:{token:string;incident:Incidente;incidents:Incidente[];types:TipoReporte[];onIncident:(i:Incidente)=>void;onClose:()=>void;onSaved:()=>void}) {
+  const [form,setForm]=useState({titulo:'',descripcion:''});
+  const [file,setFile]=useState<File|null>(null);
+  const [busy,setBusy]=useState(false);
+  const [error,setError]=useState('');
+  const preview=useMemo(()=>file?URL.createObjectURL(file):'', [file]);
+  useEffect(()=>()=>{if(preview)URL.revokeObjectURL(preview)},[preview]);
+  const change=(id:string)=>{const next=incidents.find(item=>item.id===id);if(next){onIncident(next);setForm({titulo:'',descripcion:''});setFile(null)}};
+  const submit=async(event:FormEvent)=>{event.preventDefault();if(!file){setError('Adjunta una evidencia fotográfica para crear el reporte.');return}setBusy(true);setError('');try{await crearReporte(token,{incidente:incident.id,titulo:form.titulo,descripcion:form.descripcion,evidencia:file});onSaved()}catch(reason){setError(reason instanceof Error?reason.message:'No se pudo crear el reporte.')}finally{setBusy(false)}};
+  return <Overlay onClose={onClose}><form onSubmit={submit}><div className="flex justify-between"><div><h2 className="text-2xl font-bold">Nuevo reporte</h2><p className="text-slate-500">Seguimiento formal de un incidente existente.</p></div><button type="button" onClick={onClose}><IoClose size={28}/></button></div><div className="mt-6 grid gap-4"><label className="font-bold">Incidente<select value={incident.id} onChange={event=>change(event.target.value)} className="mt-2 w-full rounded-xl border bg-white p-3 font-normal">{incidents.map(item=><option key={item.id} value={item.id}>#{item.num} · {item.titulo} — {item.habitante.nombre}</option>)}</select></label><label className="font-bold">Título<input required value={form.titulo} onChange={event=>setForm({...form,titulo:event.target.value})} className="mt-2 w-full rounded-xl border p-3 font-normal"/></label><label className="font-bold">Detalles del seguimiento<textarea required minLength={10} value={form.descripcion} onChange={event=>setForm({...form,descripcion:event.target.value})} className="mt-2 min-h-32 w-full rounded-xl border p-3 font-normal"/></label><label className="grid cursor-pointer place-items-center rounded-2xl border-2 border-dashed p-7 text-center">{preview?<img src={preview} alt="Vista previa de la evidencia" className="mb-3 max-h-64 w-full rounded-xl object-contain"/>:<IoDocumentTextOutline size={36}/>}<b>{file?file.name:'Adjuntar evidencia fotográfica'}</b><span className="text-sm text-slate-500">JPG, PNG o WEBP · máximo 8 MB</span><input required type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={event=>setFile(event.target.files?.[0]||null)}/></label></div>{error&&<p className="mt-4 rounded-lg bg-red-100 p-3 text-red-700">{error}</p>}<div className="mt-6 grid grid-cols-2 gap-3"><button type="button" onClick={onClose} className="rounded-xl border p-3 font-bold">Cancelar</button><button disabled={busy} className="rounded-xl bg-[#0a496a] p-3 font-bold text-white disabled:opacity-50">{busy?'Creando…':'Crear reporte'}</button></div></form></Overlay>
 }
 
-const currentUserId = 1;
+function ReportDetail({report,token,onClose,onConcluded,onEdit,onIncident}:{report:Reporte;token:string;onClose:()=>void;onConcluded:()=>void;onEdit:()=>void;onIncident:()=>void}){const[busy,setBusy]=useState(false);const[error,setError]=useState('');const conclude=async()=>{setBusy(true);try{await concluirReporte(token,report.id);onConcluded()}catch(x){setError(x instanceof Error?x.message:'No se pudo concluir.');setBusy(false)}};return <Overlay onClose={onClose}><div className="flex justify-between"><div><h2 className="text-3xl font-bold">{report.titulo}</h2><p>Reporte #{report.num}</p></div><span className={`h-fit rounded-xl px-5 py-2 font-bold ${report.estado==='concluido'?'bg-green-200':'bg-amber-200'}`}>{states[report.estado]}</span></div><div className="mt-5 grid gap-3 sm:grid-cols-3"><p><b>Tipo</b><br/>{report.tipo_detalle?.nombre}</p><p><b>Prioridad</b><br/><span className="capitalize">{report.prioridad}</span></p><p><b>Suceso</b><br/>{fmt(report.fecha_suceso)}</p></div><h3 className="mt-5 text-xl font-bold">Descripción</h3><p className="mt-2">{report.descripcion}</p>{report.evidencia&&<img src={report.evidencia} alt="Evidencia" className="mt-5 max-h-96 w-full rounded-2xl object-cover"/>}<section className="mt-5 rounded-xl bg-slate-100 p-4"><b>Moderador responsable</b><p>{report.moderador.nombre} · {report.moderador.telefono||'Sin teléfono'} · {report.moderador.email}</p></section><button onClick={onIncident} className="mt-4 w-full rounded-xl bg-sky-100 p-4 text-left hover:bg-sky-200"><b>Ver incidente de origen #{report.incidente_detalle.num} →</b><p>{report.incidente_detalle.titulo} — {report.incidente_detalle.habitante.nombre}</p></button>{error&&<p className="mt-4 bg-red-100 p-3 text-red-700">{error}</p>}<div className={`mt-6 grid gap-3 ${report.estado==='concluido'?'grid-cols-2':'grid-cols-3'}`}><button onClick={onClose} className="rounded-xl border p-3 font-bold">Cerrar</button>{report.estado!=='concluido'&&<button onClick={onEdit} className="rounded-xl bg-sky-200 p-3 font-bold">Editar</button>}<button disabled={busy||report.estado==='concluido'} onClick={conclude} className="rounded-xl bg-[#315b78] p-3 font-bold text-white disabled:opacity-40">{report.estado==='concluido'?'Concluido':busy?'Guardando…':'Concluir'}</button></div></Overlay>}
 
-const ReportesPage: NextPage = () => {
-  const [reports, setReports] = useState<Report[]>([]);
-  const [search, setSearch] = useState("");
-  const [activeView, setActiveView] = useState<"all" | "mine">("all");
-  const [selectedReport, setSelectedReport] = useState<Report | null>(null);
-  const [isConfirmingCompletion, setIsConfirmingCompletion] = useState(false);
-  const [isNewReportModalOpen, setIsNewReportModalOpen] = useState(false);
-  const [residentInfo] = useState<ResidentInfo>({ fullName: "", houseNumber: "", phoneNumber: "" });
-  const [newReport, setNewReport] = useState<NewReportForm>({
-    title: "",
-    type: "",
-    priority: "",
-    date: "",
-    time: "",
-    description: "",
-  });
-  const [selectedImages, setSelectedImages] = useState<File[]>([]);
-  const [formErrors, setFormErrors] = useState<Partial<Record<keyof NewReportForm, string>>>({});
+function EditReportModal({report,token,onClose,onSaved}:{report:Reporte;token:string;onClose:()=>void;onSaved:()=>void}){const[form,setForm]=useState({titulo:report.titulo,descripcion:report.descripcion});const[file,setFile]=useState<File|null>(null);const[busy,setBusy]=useState(false);const[error,setError]=useState('');const preview=useMemo(()=>file?URL.createObjectURL(file):report.evidencia,[file,report.evidencia]);useEffect(()=>()=>{if(preview?.startsWith('blob:'))URL.revokeObjectURL(preview)},[preview]);const submit=async(event:FormEvent)=>{event.preventDefault();setBusy(true);setError('');try{await editarReporte(token,report.id,{...form,evidencia:file});onSaved()}catch(reason){setError(reason instanceof Error?reason.message:'No se pudo editar el reporte.')}finally{setBusy(false)}};return <Overlay onClose={onClose}><form onSubmit={submit}><div className="flex justify-between"><h2 className="text-2xl font-bold">Editar reporte #{report.num}</h2><button type="button" onClick={onClose}><IoClose size={28}/></button></div><div className="mt-6 grid gap-4"><label className="font-bold">Título<input required value={form.titulo} onChange={event=>setForm({...form,titulo:event.target.value})} className="mt-2 w-full rounded-xl border p-3 font-normal"/></label><label className="font-bold">Detalles del seguimiento<textarea required minLength={10} value={form.descripcion} onChange={event=>setForm({...form,descripcion:event.target.value})} className="mt-2 min-h-32 w-full rounded-xl border p-3 font-normal"/></label><label className="grid cursor-pointer place-items-center rounded-2xl border-2 border-dashed p-5 text-center">{preview&&<img src={preview} alt="Vista previa" className="mb-3 max-h-64 w-full rounded-xl object-contain"/>}<b>{file?file.name:'Cambiar evidencia fotográfica (opcional)'}</b><input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={event=>setFile(event.target.files?.[0]||null)}/></label></div>{error&&<p className="mt-4 rounded-lg bg-red-100 p-3 text-red-700">{error}</p>}<div className="mt-6 grid grid-cols-2 gap-3"><button type="button" onClick={onClose} className="rounded-xl border p-3 font-bold">Cancelar</button><button disabled={busy} className="rounded-xl bg-[#0a496a] p-3 font-bold text-white disabled:opacity-50">{busy?'Guardando…':'Guardar cambios'}</button></div></form></Overlay>}
 
-  const visibleReports = useMemo(() => {
-    const normalizedSearch = search.trim().toLowerCase();
-
-    return reports
-      .filter((report) => activeView === "all" || report.userId === currentUserId)
-      .filter((report) =>
-        [report.title, report.category, report.location, report.description]
-          .some((value) => value.toLowerCase().includes(normalizedSearch)),
-      );
-  }, [activeView, reports, search]);
-
-  const closeDetailsModal = () => {
-    setSelectedReport(null);
-    setIsConfirmingCompletion(false);
-  };
-
-  const confirmCompletion = () => {
-    if (!selectedReport || selectedReport.status === "CONCLUIDO") return;
-
-    const completedReport = { ...selectedReport, status: "CONCLUIDO" as const };
-    setReports((previousReports) =>
-      previousReports.map((report) =>
-        report.id === completedReport.id ? completedReport : report,
-      ),
-    );
-    setSelectedReport(completedReport);
-    setIsConfirmingCompletion(false);
-  };
-
-  const closeNewReportModal = () => {
-    setIsNewReportModalOpen(false);
-    setFormErrors({});
-  };
-
-  const updateNewReport = (field: keyof NewReportForm, value: string) => {
-    setNewReport((currentReport) => ({ ...currentReport, [field]: value }));
-    setFormErrors((currentErrors) => ({ ...currentErrors, [field]: undefined }));
-  };
-
-  const handleImagesChange = (event: ChangeEvent<HTMLInputElement>) => {
-    setSelectedImages(event.target.files ? Array.from(event.target.files) : []);
-  };
-
-  const handleCreateReport = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-
-    const requiredFields: Array<keyof NewReportForm> = ["title", "type", "priority", "date", "description"];
-    const errors = requiredFields.reduce<Partial<Record<keyof NewReportForm, string>>>((currentErrors, field) => {
-      if (!newReport[field].trim()) currentErrors[field] = "Este campo es obligatorio.";
-      return currentErrors;
-    }, {});
-
-    setFormErrors(errors);
-    if (Object.keys(errors).length > 0) return;
-
-    // La llamada al servicio de reportes se integrará aquí cuando el endpoint esté disponible.
-    // Los archivos seleccionados ya están preparados para enviarse como FormData.
-  };
-
-  return (
-    <div className="flex min-h-screen bg-[#dfe5eb]">
-      <Sidebar activeItem="Reportes" />
-
-      <main className="min-w-0 flex-1 p-5 sm:p-[30px]">
-        <div className="mb-8 flex flex-wrap items-start justify-between gap-5">
-          <div className="max-w-2xl">
-            <h1 className="m-0 text-4xl font-bold tracking-wide text-[#124b70] sm:text-[52px]">REPORTES</h1>
-            <p className="mt-2 text-sm text-slate-600 sm:text-base">
-              Consulta y administra los reportes registrados por los habitantes de la comunidad.
-            </p>
-            <SearchBar
-              placeholder="Buscar reporte..."
-              onSearch={setSearch}
-              className="mt-4 w-full max-w-[500px]"
-            />
-          </div>
-          <button
-            type="button"
-            onClick={() => setIsNewReportModalOpen(true)}
-            className="rounded-[14px] bg-[#0a496a] px-5 py-3 font-medium text-white transition-colors hover:bg-[#0d5a80] sm:px-6 sm:py-4"
-          >
-            + Nuevo Reporte
-          </button>
-        </div>
-
-        <div className="mb-6 flex flex-wrap gap-3" role="tablist" aria-label="Vistas de reportes">
-          <button
-            type="button"
-            role="tab"
-            aria-selected={activeView === "all"}
-            onClick={() => setActiveView("all")}
-            className={`rounded-xl px-5 py-2.5 font-medium transition-colors ${
-              activeView === "all"
-                ? "bg-[#0a496a] text-white shadow-sm"
-                : "bg-white text-[#0a496a] hover:bg-slate-100"
-            }`}
-          >
-            Todos los reportes
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={activeView === "mine"}
-            onClick={() => setActiveView("mine")}
-            className={`rounded-xl px-5 py-2.5 font-medium transition-colors ${
-              activeView === "mine"
-                ? "bg-[#0a496a] text-white shadow-sm"
-                : "bg-white text-[#0a496a] hover:bg-slate-100"
-            }`}
-          >
-            Mis reportes
-          </button>
-        </div>
-
-        {visibleReports.length === 0 ? (
-          <section className="flex min-h-[360px] flex-col items-center justify-center rounded-[20px] bg-white px-6 text-center shadow-[0_2px_8px_rgba(0,0,0,0.1)]">
-            <IoDocumentTextOutline className="mb-4 h-16 w-16 text-[#75a5be]" aria-hidden="true" />
-            <h2 className="text-xl font-bold tracking-wide text-[#124b70]">NO HAY REPORTES REGISTRADOS</h2>
-            <p className="mt-2 max-w-md text-sm text-slate-600">
-              Actualmente no existen reportes disponibles para mostrar.
-            </p>
-          </section>
-        ) : (
-          <section className="flex flex-col gap-4" aria-label="Lista de reportes">
-            {visibleReports.map((report) => (
-              <button
-                key={report.id}
-                type="button"
-                onClick={() => setSelectedReport(report)}
-                className="flex w-full flex-col gap-4 rounded-[20px] bg-white p-5 text-left shadow-[0_2px_8px_rgba(0,0,0,0.1)] transition hover:-translate-y-0.5 hover:shadow-md sm:flex-row sm:items-center sm:justify-between"
-              >
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h2 className="text-xl font-semibold text-slate-900">{report.title}</h2>
-                    <span className="rounded-lg bg-[#c8f0bf] px-3 py-1 text-sm text-[#215d2d]">{report.category}</span>
-                  </div>
-                  <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-sm text-slate-600">
-                    <span>Fecha: {report.date}</span>
-                    <span className="flex items-center gap-1"><IoLocationOutline aria-hidden="true" /> {report.location}</span>
-                  </div>
-                </div>
-                <span className={`w-fit rounded-lg px-3 py-1 text-sm font-semibold ${
-                  report.status === "PENDIENTE" ? "bg-[#ffd79c] text-[#8a6a00]" : "bg-[#c8f0bf] text-[#215d2d]"
-                }`}>
-                  {report.status}
-                </span>
-              </button>
-            ))}
-          </section>
-        )}
-      </main>
-
-      {selectedReport && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4" role="dialog" aria-modal="true" aria-labelledby="report-details-title">
-          <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-5 shadow-2xl sm:p-7">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-sm font-medium text-[#0a496a]">Detalle del reporte</p>
-                <h2 id="report-details-title" className="mt-1 text-2xl font-bold text-slate-900">{selectedReport.title}</h2>
-              </div>
-              <button type="button" onClick={closeDetailsModal} className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-800" aria-label="Cerrar detalles">
-                <IoClose className="h-6 w-6" />
-              </button>
-            </div>
-
-            <div className="mt-6 grid gap-4 sm:grid-cols-2">
-              <p><span className="block text-sm text-slate-500">Categoría</span><span className="font-medium text-slate-900">{selectedReport.category}</span></p>
-              <p><span className="block text-sm text-slate-500">Fecha</span><span className="font-medium text-slate-900">{selectedReport.date}</span></p>
-              <p><span className="block text-sm text-slate-500">Ubicación</span><span className="font-medium text-slate-900">{selectedReport.location}</span></p>
-              <p><span className="block text-sm text-slate-500">Estado</span><span className={`inline-block rounded-lg px-3 py-1 text-sm font-semibold ${selectedReport.status === "PENDIENTE" ? "bg-[#ffd79c] text-[#8a6a00]" : "bg-[#c8f0bf] text-[#215d2d]"}`}>{selectedReport.status}</span></p>
-            </div>
-
-            <div className="mt-5">
-              <p className="text-sm text-slate-500">Descripción</p>
-              <p className="mt-1 whitespace-pre-wrap text-slate-800">{selectedReport.description}</p>
-            </div>
-            {selectedReport.image && (
-              <img src={selectedReport.image} alt={`Evidencia de ${selectedReport.title}`} className="mt-5 max-h-72 w-full rounded-xl object-cover" />
-            )}
-
-            <div className="mt-7 flex flex-wrap justify-end gap-3">
-              <button type="button" onClick={closeDetailsModal} className="rounded-xl border border-slate-300 px-5 py-2.5 font-medium text-slate-700 hover:bg-slate-100">Cerrar</button>
-              {selectedReport.status === "PENDIENTE" && (
-                <button type="button" onClick={() => setIsConfirmingCompletion(true)} className="flex items-center gap-2 rounded-xl bg-[#0a496a] px-5 py-2.5 font-medium text-white hover:bg-[#0d5a80]">
-                  <IoCheckmarkCircleOutline className="h-5 w-5" /> Marcar como concluido
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {selectedReport && isConfirmingCompletion && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/60 p-4" role="dialog" aria-modal="true" aria-labelledby="confirmation-title">
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
-            <h2 id="confirmation-title" className="text-xl font-bold text-slate-900">¿Marcar reporte como concluido?</h2>
-            <p className="mt-3 text-slate-600">¿Estás seguro de que deseas marcar este reporte como concluido?</p>
-            <p className="mt-2 font-medium text-slate-900">{selectedReport.title}</p>
-            <div className="mt-7 flex flex-wrap justify-end gap-3">
-              <button type="button" onClick={() => setIsConfirmingCompletion(false)} className="rounded-xl border border-slate-300 px-5 py-2.5 font-medium text-slate-700 hover:bg-slate-100">Cancelar</button>
-              <button type="button" onClick={confirmCompletion} className="rounded-xl bg-[#0a496a] px-5 py-2.5 font-medium text-white hover:bg-[#0d5a80]">Sí, marcar como concluido</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {isNewReportModalOpen && (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/50 p-4" role="dialog" aria-modal="true" aria-labelledby="new-report-title">
-          <form onSubmit={handleCreateReport} className="max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-[22px] bg-white p-5 shadow-2xl sm:p-7">
-            <div className="flex items-start justify-between gap-4 border-b border-slate-200 pb-5">
-              <div>
-                <h2 id="new-report-title" className="text-2xl font-bold text-[#124b70]">Nuevo Reporte</h2>
-                <p className="mt-1 text-slate-600">Completa los datos para crear un nuevo reporte.</p>
-              </div>
-              <button type="button" onClick={closeNewReportModal} className="rounded-lg p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-800" aria-label="Cerrar formulario">
-                <IoClose className="h-6 w-6" />
-              </button>
-            </div>
-
-            <section className="mt-6">
-              <h3 className="text-lg font-bold text-[#124b70]">Datos del residente</h3>
-              <div className="mt-3 grid gap-4 md:grid-cols-3">
-                <label className="text-sm font-medium text-slate-700">Nombre completo
-                  <input value={residentInfo.fullName} readOnly placeholder="Disponible al iniciar sesión" className="mt-1.5 w-full rounded-[10px] border border-slate-200 bg-slate-100 px-3 py-3 text-slate-500 outline-none placeholder:text-slate-400" />
-                </label>
-                <label className="text-sm font-medium text-slate-700">Número de casa
-                  <input value={residentInfo.houseNumber} readOnly placeholder="Disponible al iniciar sesión" className="mt-1.5 w-full rounded-[10px] border border-slate-200 bg-slate-100 px-3 py-3 text-slate-500 outline-none placeholder:text-slate-400" />
-                </label>
-                <label className="text-sm font-medium text-slate-700">Número de teléfono
-                  <input value={residentInfo.phoneNumber} readOnly placeholder="Disponible al iniciar sesión" className="mt-1.5 w-full rounded-[10px] border border-slate-200 bg-slate-100 px-3 py-3 text-slate-500 outline-none placeholder:text-slate-400" />
-                </label>
-              </div>
-            </section>
-
-            <section className="mt-7">
-              <h3 className="text-lg font-bold text-[#124b70]">Información general</h3>
-              <div className="mt-3 grid gap-4 md:grid-cols-3">
-                <label className="text-sm font-medium text-slate-700 md:col-span-3">Título del reporte
-                  <input value={newReport.title} onChange={(event) => updateNewReport("title", event.target.value)} className={`mt-1.5 w-full rounded-[10px] border bg-white px-3 py-3 text-slate-900 outline-none transition focus:border-[#0a496a] focus:ring-2 focus:ring-[#bfe2ff] ${formErrors.title ? "border-red-500" : "border-slate-300"}`} />
-                  {formErrors.title && <span className="mt-1 block text-xs text-red-600">{formErrors.title}</span>}
-                </label>
-                <label className="text-sm font-medium text-slate-700">Tipo de reporte
-                  <select value={newReport.type} onChange={(event) => updateNewReport("type", event.target.value)} className={`mt-1.5 w-full rounded-[10px] border bg-white px-3 py-3 text-slate-900 outline-none transition focus:border-[#0a496a] focus:ring-2 focus:ring-[#bfe2ff] ${formErrors.type ? "border-red-500" : "border-slate-300"}`}>
-                    <option value="">Selecciona una opción</option>
-                    <option value="Mantenimiento">Mantenimiento</option>
-                    <option value="Seguridad">Seguridad</option>
-                    <option value="Servicios">Servicios</option>
-                    <option value="Otro">Otro</option>
-                  </select>
-                  {formErrors.type && <span className="mt-1 block text-xs text-red-600">{formErrors.type}</span>}
-                </label>
-                <label className="text-sm font-medium text-slate-700">Prioridad
-                  <select value={newReport.priority} onChange={(event) => updateNewReport("priority", event.target.value)} className={`mt-1.5 w-full rounded-[10px] border bg-white px-3 py-3 text-slate-900 outline-none transition focus:border-[#0a496a] focus:ring-2 focus:ring-[#bfe2ff] ${formErrors.priority ? "border-red-500" : "border-slate-300"}`}>
-                    <option value="">Selecciona una opción</option>
-                    <option value="Baja">Baja</option>
-                    <option value="Media">Media</option>
-                    <option value="Alta">Alta</option>
-                  </select>
-                  {formErrors.priority && <span className="mt-1 block text-xs text-red-600">{formErrors.priority}</span>}
-                </label>
-              </div>
-            </section>
-
-            <section className="mt-7">
-              <h3 className="text-lg font-bold text-[#124b70]">Detalles del suceso</h3>
-              <div className="mt-3 grid gap-4 md:grid-cols-2">
-                <label className="text-sm font-medium text-slate-700">Fecha del suceso
-                  <input type="date" value={newReport.date} onChange={(event) => updateNewReport("date", event.target.value)} className={`mt-1.5 w-full rounded-[10px] border bg-white px-3 py-3 text-slate-900 outline-none transition focus:border-[#0a496a] focus:ring-2 focus:ring-[#bfe2ff] ${formErrors.date ? "border-red-500" : "border-slate-300"}`} />
-                  {formErrors.date && <span className="mt-1 block text-xs text-red-600">{formErrors.date}</span>}
-                </label>
-                <label className="text-sm font-medium text-slate-700">Hora aproximada
-                  <input type="time" value={newReport.time} onChange={(event) => updateNewReport("time", event.target.value)} className="mt-1.5 w-full rounded-[10px] border border-slate-300 bg-white px-3 py-3 text-slate-900 outline-none transition focus:border-[#0a496a] focus:ring-2 focus:ring-[#bfe2ff]" />
-                </label>
-                <label className="text-sm font-medium text-slate-700 md:col-span-2">Descripción detallada
-                  <textarea value={newReport.description} onChange={(event) => updateNewReport("description", event.target.value)} rows={4} className={`mt-1.5 w-full resize-y rounded-[10px] border bg-white px-3 py-3 text-slate-900 outline-none transition focus:border-[#0a496a] focus:ring-2 focus:ring-[#bfe2ff] ${formErrors.description ? "border-red-500" : "border-slate-300"}`} />
-                  {formErrors.description && <span className="mt-1 block text-xs text-red-600">{formErrors.description}</span>}
-                </label>
-              </div>
-            </section>
-
-            <section className="mt-7">
-              <h3 className="text-lg font-bold text-[#124b70]">Evidencia multimedia</h3>
-              <label className="mt-3 flex min-h-36 cursor-pointer flex-col items-center justify-center rounded-[12px] border-2 border-dashed border-[#75a5be] bg-[#f5f9fc] px-5 py-6 text-center transition hover:bg-[#eaf3f8]">
-                <IoImageOutline className="h-9 w-9 text-[#0a496a]" />
-                <span className="mt-2 font-medium text-[#124b70]">Arrastra o selecciona imágenes</span>
-                <span className="mt-1 text-sm text-slate-500">Puedes seleccionar varios archivos.</span>
-                <input type="file" accept="image/*" multiple onChange={handleImagesChange} className="sr-only" />
-              </label>
-              {selectedImages.length > 0 && <p className="mt-2 text-sm text-slate-600">{selectedImages.length} imagen{selectedImages.length === 1 ? "" : "es"} seleccionada{selectedImages.length === 1 ? "" : "s"}.</p>}
-            </section>
-
-            <div className="mt-8 flex flex-wrap justify-end gap-3 border-t border-slate-200 pt-5">
-              <button type="button" onClick={closeNewReportModal} className="rounded-[10px] border border-slate-300 px-5 py-3 font-medium text-slate-700 transition hover:bg-slate-100">Cancelar</button>
-              <button type="submit" className="rounded-[10px] bg-[#0a496a] px-5 py-3 font-medium text-white transition hover:bg-[#0d5a80]">Crear Reporte</button>
-            </div>
-          </form>
-        </div>
-      )}
-    </div>
-  );
-};
-
-export default ReportesPage;
+function Overlay({children,onClose}:{children:React.ReactNode;onClose:()=>void}){return <div className="fixed inset-0 z-50 grid place-items-center bg-black/50 p-4" onMouseDown={onClose}><div onMouseDown={e=>e.stopPropagation()} className="max-h-[94vh] w-full max-w-3xl overflow-y-auto rounded-3xl bg-white p-7 text-[#0a496a] shadow-2xl">{children}</div></div>}

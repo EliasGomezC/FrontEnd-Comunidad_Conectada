@@ -1,97 +1,156 @@
-import type { NextPage } from "next";
-import Image from "next/image";
-import '../login/fondo.css';
+"use client";
 
-const Lobby: NextPage = () => {
-    return (
-        <div className="w-full min-h-screen relative flex flex-col box-border bg-[#E0E5EB] leading-[normal] tracking-[normal]">
-            {/* Capa de Cuadrícula: Fondo */}
-            <div className="fondo-cuadricula absolute inset-0 z-0 pointer-events-none" />
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/features/authentication/AuthContext";
+import { crearPrivada, getMisPrivadas, getModulosSistema, unirseAPrivada } from "@/services/privadas";
+import type { ModuloSistema } from "@/types/privadas";
+import type { Membership } from "@/types/auth";
+import { IoArrowForward } from "react-icons/io5";
 
-            {/* Header */}
-            <header className="w-full h-[70px] bg-[#0a496a] flex items-center justify-between px-[30px] shadow-md relative z-10">
-                {/* <div className="w-[180px] h-[45px] rounded-[10px] bg-white flex items-center justify-center p-2 box-border">
-                    <Image
-                        className="object-contain"
-                        width={120}
-                        height={35}
-                        alt="Logo Comunidad Conectada"
-                        src="/assets/img/logoComunidadConectada.png"
-                    />
-                </div> */}
-                <div>
+export default function LobbyPage() {
+  const { token, user, isAuthenticated, isLoading, logout, selectPrivate } = useAuth();
+  const router = useRouter();
+  const [memberships, setMemberships] = useState<Membership[]>([]);
+  const [inactivePrivate, setInactivePrivate] = useState<Membership | null>(null);
+  const [systemModules, setSystemModules] = useState<ModuloSistema[]>([]);
+  const [selectedModules, setSelectedModules] = useState<string[]>([]);
+  const [code, setCode] = useState("");
+  const [name, setName] = useState("");
 
-                </div>
-                <div className="w-[45px] h-[45px] rounded-full bg-white flex items-center justify-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[#374151]"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
-                </div>
-            </header>
+  const [address, setAddress] = useState({ numExterior: "", colonia: "", calle: "", cp: "", ciudad: "", estado: "" });
+  const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
+  const [working, setWorking] = useState(false);
 
-            {/* Contenido Principal */}
-            <main className="flex-1 w-full flex flex-col items-center justify-center gap-[40px] px-[30px] py-[50px] relative z-10">
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) router.replace("/login");
+  }, [isLoading, isAuthenticated, router]);
 
-                {/* Logo Central */}
-                <div className="shadow-[0px_4px_10px_rgba(0,_0,_0,0.15)] rounded-[30px] bg-[#c7e7fe] flex items-center justify-center p-6">
-                    <Image
-                        className="object-contain"
-                        width={150}
-                        height={150}
-                        alt="Logo Grande Comunidad Conectada"
-                        src="/assets/img/iconCC.png" // Asumiendo que tienes un archivo solo para el icono grande
-                    />
-                </div>
+  useEffect(() => {
+    if (token) {
+      getMisPrivadas(token).then(setMemberships).catch(() => undefined);
+      getModulosSistema(token).then((modules) => {
+        setSystemModules(modules);
+        setSelectedModules(modules.map((module) => module.codigo));
+      }).catch(() => undefined);
+    }
+  }, [token]);
 
-                {/* Textos de Bienvenida */}
-                <div className="text-center flex flex-col gap-3 max-w-[600px]">
-                    <h1 className="m-0 text-[40px] leading-[1.2] font-extrabold font-['Satoshi_Variable'] text-[#000]">
-                        Bienvenido a Comunidad Conectada
-                    </h1>
-                    <p className="m-0 text-[18px] leading-[1.5] font-medium font-['Satoshi_Variable'] text-[#374151]">
-                        Aun no perteneces a ninguna privada residencial. Únete a una existente con un codigo de acceso o registra una nueva.
-                    </p>
-                </div>
+  const join = async () => {
+    if (!token || !code.trim()) return;
+    setWorking(true); setError(""); setNotice("");
+    try {
+      const result = await unirseAPrivada(token, code);
+      setMemberships((current) => [...current, result.membresia]);
+      setCode("");
+      setNotice(`Te uniste a ${result.privada.nombre}.`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "No se pudo unir a la privada.");
+    } finally { setWorking(false); }
+  };
 
-                {/* Tarjetas de Opciones */}
-                <div className="w-full flex flex-wrap items-center justify-center gap-[30px] max-w-[1000px]">
+  const create = async () => {
+    if (!token || !name.trim()) return;
+    setWorking(true); setError(""); setNotice("");
+    try {
+      const result = await crearPrivada(token, {
+        nombre: name.trim(),
+        modulos_contratados: selectedModules,
+        dir_num_exterior: address.numExterior.trim(),
+        dir_colonia: address.colonia.trim(),
+        dir_calle: address.calle.trim(),
+        dir_cp: address.cp.trim(),
+        dir_ciudad: address.ciudad.trim(),
+        dir_estado: address.estado.trim(),
+      });
+      setMemberships((current) => [...current, result.membresia]);
+      setName("");
+      setAddress({ numExterior: "", colonia: "", calle: "", cp: "", ciudad: "", estado: "" });
+      setNotice(`Privada creada. Tu código es: ${result.privada.codigo}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "No se pudo crear la privada.");
+    } finally { setWorking(false); }
+  };
 
-                    {/* Tarjeta 1: Unirme */}
-                    <div className="flex-1 min-w-[300px] max-w-[400px] shadow-[0px_8px_20px_rgba(0,_0,_0,0.1)] rounded-[25px] bg-[#f5f7fa] flex flex-col items-center p-9 box-border gap-6 text-center hover:scale-[1.02] transition-transform duration-300">
-                        <div className="w-[70px] h-[70px] rounded-[20px] bg-[#FFEBD1] flex items-center justify-center">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="35" height="35" viewBox="0 0 24 24" fill="none" stroke="#4C4946" strokeWidth="2"><rect width="18" height="11" x="3" y="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
-                        </div>
-                        <h3 className="m-0 text-[22px] font-bold font-['Satoshi_Variable'] text-[#000]">
-                            Unirme con Código
-                        </h3>
-                        <p className="m-0 text-[16px] leading-[1.5] font-normal font-['Satoshi_Variable'] text-[#4B5563]">
-                            Ingresa el código de acceso para unirte a una privada existente
-                        </p>
-                        <button className="w-full h-[50px] rounded-[15px] bg-[#FFEBD1] hover:bg-[#F3E0C8] border-none flex items-center justify-center gap-3 cursor-pointer group">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#4C4946" strokeWidth="2.5" className="group-hover:rotate-12 transition-transform"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.778-7.778zm0 0L15.5 15.5m.11-6.11A5.5 5.5 0 1 1 23.39 1.61a5.5 5.5 0 0 1-7.778 7.778z" /></svg>
-                            <span className="text-[17px] font-bold font-['Satoshi_Variable'] text-[#4C4946]">Ingresa Código</span>
-                        </button>
-                    </div>
+  const enterPrivate = (membership: Membership) => {
+    if (membership.status === "suspendido") {
+      setInactivePrivate(membership);
+      return;
+    }
+    selectPrivate(membership);
+    router.push(membership.rol === "moderador" ? "/admin/usuarios" : "/reportes");
+  };
 
-                    {/* Tarjeta 2: Registrar */}
-                    <div className="flex-1 min-w-[300px] max-w-[400px] shadow-[0px_8px_20px_rgba(0,_0,_0,0.1)] rounded-[25px] bg-[#f5f7fa] flex flex-col items-center p-9 box-border gap-6 text-center hover:scale-[1.02] transition-transform duration-300">
-                        <div className="w-[70px] h-[70px] rounded-[20px] bg-[#C1E1C1] flex items-center justify-center">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="35" height="35" viewBox="0 0 24 24" fill="none" stroke="#4C4946" strokeWidth="2"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><polyline points="9 22 9 12 15 12 15 22" /></svg>
-                        </div>
-                        <h3 className="m-0 text-[22px] font-bold font-['Satoshi_Variable'] text-[#000]">
-                            Registrar Nueva Privada
-                        </h3>
-                        <p className="m-0 text-[16px] leading-[1.5] font-normal font-['Satoshi_Variable'] text-[#4B5563]">
-                            Registra una nueva privada residencial y conviértete en su moderador
-                        </p>
-                        <button className="w-full h-[50px] rounded-[15px] bg-[#C1E1C1] hover:bg-[#B3D4B3] border-none flex items-center justify-center gap-3 cursor-pointer group">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#4C4946" strokeWidth="2.5" className="group-hover:scale-110 transition-transform"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><polyline points="9 22 9 12 15 12 15 22" /><line x1="12" y1="15" x2="12" y2="19" /><line x1="10" y1="17" x2="14" y2="17" /></svg>
-                            <span className="text-[17px] font-bold font-['Satoshi_Variable'] text-[#4C4946]">Nueva Privada</span>
-                        </button>
-                    </div>
+  if (isLoading || !isAuthenticated) return <div className="min-h-screen grid place-items-center">Cargando...</div>;
 
-                </div>
-            </main>
+  return (
+    <main className="min-h-screen bg-[#e0e5eb] p-6 text-[#374151]">
+      <header className="mx-auto flex max-w-5xl items-center justify-between rounded-2xl bg-[#0a496a] px-6 py-4 text-white shadow-md">
+        <div><p className="text-sm opacity-80">Bienvenido</p><h1 className="text-xl font-bold">{user?.perfil?.nombres || user?.email}</h1></div>
+        <div className="flex items-center gap-2">
+          <Link href="/perfil" className="rounded-lg bg-white px-4 py-2 font-semibold text-[#0a496a]">Mi perfil</Link>
+          <button onClick={logout} className="rounded-lg border border-white px-4 py-2 font-semibold text-white hover:bg-white/10">Cerrar sesión</button>
         </div>
-    );
-};
+      </header>
 
-export default Lobby;
+      <section className="mx-auto mt-8 max-w-5xl">
+        <h2 className="text-3xl font-extrabold text-[#0a496a]">Tus privadas</h2>
+        {memberships.length > 0 && <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          {memberships.map((membership) => <button type="button" onClick={() => enterPrivate(membership)} key={membership.id} className={`group rounded-xl p-5 text-left shadow transition hover:-translate-y-1 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-[#0a496a] ${membership.status === "suspendido" ? "border-2 border-red-300 bg-red-50" : "bg-white"}`}>
+            <div className="flex items-start justify-between gap-4">
+              <div>
+            <h3 className="font-bold">{membership.privada_nombre}</h3>
+            <p className="text-sm">Código: <strong>{membership.privada_codigo}</strong></p>
+            <p className="mt-1 text-sm capitalize text-[#0a496a]">Rol: {membership.rol}</p>
+              </div>
+              <IoArrowForward className="mt-2 text-2xl text-[#0a496a] transition group-hover:translate-x-1" />
+            </div>
+            <p className="mt-4 text-sm font-semibold text-[#0a496a]">Entrar a la privada</p>
+            {membership.status === "suspendido" && <p className="mt-2 font-bold text-red-600">Cuenta inactiva</p>}
+          </button>)}
+        </div>}
+
+        <div className="mt-8 grid gap-6 lg:grid-cols-2">
+          <section className="rounded-2xl bg-white p-6 shadow">
+            <h2 className="text-xl font-bold">Unirme a una privada</h2>
+            <p className="mt-2 text-sm text-gray-600">Pide el código a un moderador.</p>
+            <input value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} placeholder="CC-XXXXXXXX" className="mt-5 h-12 w-full rounded-xl border px-4 uppercase outline-none focus:border-[#0a496a]" />
+            <button onClick={join} disabled={working} className="mt-4 h-12 w-full rounded-xl bg-[#ffeBD1] font-bold text-[#4c4946] disabled:opacity-50">Unirme con código</button>
+          </section>
+          <section className="rounded-2xl bg-white p-6 shadow">
+            <h2 className="text-xl font-bold">Crear una privada</h2>
+            <p className="mt-2 text-sm text-gray-600">Al crearla serás su primer moderador.</p>
+            <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Nombre de la privada" className="mt-5 h-12 w-full rounded-xl border px-4 outline-none focus:border-[#0a496a]" />
+            <div className="mt-4 rounded-xl border border-slate-200 p-4">
+              <p className="mb-3 text-sm font-bold text-[#0a496a]">Módulos de la plataforma contratados</p>
+              <div className="grid gap-2 sm:grid-cols-2">
+                {systemModules.map((module) => (
+                  <label key={module.codigo} className="flex cursor-pointer items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={selectedModules.includes(module.codigo)}
+                      onChange={(event) => setSelectedModules((current) => event.target.checked ? [...current, module.codigo] : current.filter((code) => code !== module.codigo))}
+                      className="h-4 w-4 accent-[#0a496a]"
+                    />
+                    {module.nombre}
+                  </label>
+                ))}
+              </div>
+            </div>
+            <div className="mt-3 grid gap-3 sm:grid-cols-2">
+              {([['numExterior', 'Número exterior'], ['colonia', 'Colonia'], ['calle', 'Calle'], ['cp', 'Código postal'], ['ciudad', 'Ciudad'], ['estado', 'Estado']] as const).map(([field, placeholder]) => (
+                <input key={field} value={address[field]} onChange={(e) => setAddress((current) => ({ ...current, [field]: e.target.value }))} placeholder={placeholder} className="h-11 rounded-xl border px-3 outline-none focus:border-[#0a496a]" />
+              ))}
+            </div>
+            <button onClick={create} disabled={working} className="mt-4 h-12 w-full rounded-xl bg-[#c1e1c1] font-bold text-[#4c4946] disabled:opacity-50">Crear privada</button>
+          </section>
+        </div>
+        {notice && <p className="mt-5 rounded-lg bg-green-100 p-3 text-center text-green-800">{notice}</p>}
+        {error && <p className="mt-5 rounded-lg bg-red-100 p-3 text-center text-red-800">{error}</p>}
+      </section>
+      {inactivePrivate && <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/50 p-4" onMouseDown={() => setInactivePrivate(null)}><div className="max-w-md rounded-3xl bg-white p-8 text-center shadow-2xl" onMouseDown={(e) => e.stopPropagation()}><div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-red-100 text-3xl">!</div><h2 className="mt-4 text-2xl font-bold text-[#0a496a]">Cuenta inactiva</h2><p className="mt-4 text-slate-600">Tu cuenta ha sido desactivada en <strong>{inactivePrivate.privada_nombre}</strong>. Por favor, contacta a un moderador de la privada para solicitar su reactivación.</p><button onClick={() => setInactivePrivate(null)} className="mt-7 w-full rounded-xl bg-[#0a496a] p-3 font-bold text-white">Entendido</button></div></div>}
+    </main>
+  );
+}
