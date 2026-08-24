@@ -1,29 +1,44 @@
 "use client";
 
-import { IoMapOutline } from "react-icons/io5";
+import { IoLocationOutline, IoMapOutline } from "react-icons/io5";
 import { colors } from "./tokens";
 
 interface ContactLocationProps {
   location?: string;
+  mapsUrl?: string;
+  compact?: boolean;
 }
 
-export default function ContactLocation({ location }: ContactLocationProps) {
+export default function ContactLocation({ location, mapsUrl, compact = false }: ContactLocationProps) {
   return (
     <div
-      className="flex flex-col items-center justify-center"
+      className="flex w-full flex-col rounded-xl"
       style={{
-        height: 120,
-        width: "100%",
-        borderRadius: 12,
+        minHeight: compact ? 88 : 120,
         border: `1px dashed ${colors.inputBorder}`,
         background: colors.input,
-        gap: 8,
+        padding: 16,
+        gap: 10,
       }}
     >
-      <IoMapOutline size={28} style={{ color: colors.primary }} />
-      <span style={{ fontSize: 13, color: colors.placeholder }}>
-        {location?.trim() ? location : "Ubicación del contacto"}
-      </span>
+      <div className="flex items-center gap-2" style={{ color: colors.primary }}>
+        <IoMapOutline size={22} />
+        <strong>{mapsUrl ? "Ubicación con Maps" : "Ubicación"}</strong>
+      </div>
+      <div className="flex items-start gap-2 text-sm" style={{ color: colors.text }}>
+        <IoLocationOutline className="mt-0.5 shrink-0" />
+        <span>{location?.trim() ? location : "Ubicación del contacto"}</span>
+      </div>
+      {mapsUrl && (
+        <a
+          href={mapsUrl}
+          target="_blank"
+          rel="noreferrer"
+          className="w-fit rounded-lg bg-[#0a496a] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#12486d]"
+        >
+          Abrir en Maps
+        </a>
+      )}
     </div>
   );
 }

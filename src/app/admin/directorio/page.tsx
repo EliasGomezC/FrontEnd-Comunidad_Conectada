@@ -14,7 +14,19 @@ import ContactDetails from "@/components/Modal/ContactDetails";
 import DeleteConfirmation from "@/components/Modal/DeleteConfirmation";
 import { IoCallOutline, IoFilter, IoImageOutline } from "react-icons/io5";
 
-const empty = (privada = ""): DirectorioPayload => ({ privada, nombre: "", categorias: "", num_tel: "", codigo: "", descripcion: "", ubicacion: "" });
+const empty = (privada = ""): DirectorioPayload => ({
+  privada,
+  nombre: "",
+  categorias: "",
+  num_tel: "",
+  codigo: "",
+  descripcion: "",
+  ubicacion: "",
+  tipo_ubicacion: "local",
+  numero_casa: "",
+  direccion_externa: "",
+  maps_url: "",
+});
 
 type ModalType = "create" | "view" | "edit" | "delete";
 
@@ -50,7 +62,19 @@ export default function DirectorioPage() {
   const openView = (item: DirectorioContacto) => { setSelectedContact(item); setModalType("view"); };
   const openEdit = (item: DirectorioContacto) => {
     setSelectedContact(item);
-    setForm({ privada: item.privada, nombre: item.nombre, categorias: item.categorias, num_tel: item.num_tel, codigo: item.codigo, descripcion: item.descripcion || "", ubicacion: item.ubicacion || "" });
+    setForm({
+      privada: item.privada,
+      nombre: item.nombre,
+      categorias: item.categorias,
+      num_tel: item.num_tel,
+      codigo: item.codigo,
+      descripcion: item.descripcion || "",
+      ubicacion: item.ubicacion || "",
+      tipo_ubicacion: item.tipo_ubicacion || "local",
+      numero_casa: item.numero_casa || "",
+      direccion_externa: item.direccion_externa || "",
+      maps_url: item.maps_url || "",
+    });
     setMainPreview(item.imagenes || null);
     setGalleryImages(item.galeria || []);
     setGalleryFiles([]);

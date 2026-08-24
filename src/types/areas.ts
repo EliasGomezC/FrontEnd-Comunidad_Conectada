@@ -6,6 +6,7 @@ export interface Area {
   descripcion?: string;
   capacidad: number;
   imagen?: string;
+  galeria?: { id: string; url: string }[];
   status: string;
 }
 

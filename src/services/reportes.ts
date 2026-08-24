@@ -11,6 +11,8 @@ export async function crearIncidenteReporte(token:string,payload:CrearIncidenteR
   body.append('tipo_categoria',payload.tipo_categoria); body.append('prioridad',payload.prioridad);
   body.append('fecha_incidente',payload.fecha_incidente); body.append('ubicacion',payload.ubicacion);
   if(payload.evidencia) body.append('evidencia_archivo',payload.evidencia);
+  payload.galeria_archivos?.forEach((file)=>body.append('galeria_archivos',file));
+  payload.galeria_eliminar?.forEach((id)=>body.append('galeria_eliminar',id));
   return fetchApiAuth<IncidenteReporte>('/api/incidentes/',token,{method:'POST',body});
 }
 export async function editarIncidenteReporte(token:string,id:string,payload:CrearIncidenteReporteRequest):Promise<IncidenteReporte>{
@@ -19,6 +21,8 @@ export async function editarIncidenteReporte(token:string,id:string,payload:Crea
   body.append('tipo_categoria',payload.tipo_categoria); body.append('prioridad',payload.prioridad);
   body.append('fecha_incidente',payload.fecha_incidente); body.append('ubicacion',payload.ubicacion);
   if(payload.evidencia) body.append('evidencia_archivo',payload.evidencia);
+  payload.galeria_archivos?.forEach((file)=>body.append('galeria_archivos',file));
+  payload.galeria_eliminar?.forEach((id)=>body.append('galeria_eliminar',id));
   return fetchApiAuth<IncidenteReporte>(`/api/incidentes/${id}/`,token,{method:'PATCH',body});
 }
 export const getReportes = (token:string,filters?:ReporteFilter) => fetchApiAuth<ReportesResponse>(`/api/reportes/${query(filters as Record<string,string|number|boolean|undefined>)}`,token);
@@ -26,6 +30,8 @@ export const getReporteById = (token:string,id:string) => fetchApiAuth<Reporte>(
 export const crearReporte = (token:string,payload:CrearReporteRequest) => {
   const body=new FormData(); body.append('incidente',payload.incidente); body.append('titulo',payload.titulo); body.append('descripcion',payload.descripcion);
   if(payload.evidencia) body.append('evidencia_archivo',payload.evidencia);
+  payload.galeria_archivos?.forEach((file)=>body.append('galeria_archivos',file));
+  payload.galeria_eliminar?.forEach((id)=>body.append('galeria_eliminar',id));
   return fetchApiAuth<Reporte>('/api/reportes/',token,{method:'POST',body});
 };
 export const editarReporte = (token:string,id:string,payload:{titulo:string;descripcion:string;evidencia?:File|null}) => {

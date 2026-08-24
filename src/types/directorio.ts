@@ -12,6 +12,10 @@ export interface DirectorioContacto {
   codigo: string;
   descripcion?: string;
   ubicacion?: string;
+  tipo_ubicacion?: 'local' | 'externo';
+  numero_casa?: string;
+  direccion_externa?: string;
+  maps_url?: string;
   imagenes?: string;
   galeria?: DirectorioGaleriaItem[];
   status: string;
