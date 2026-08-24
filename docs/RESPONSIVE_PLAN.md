@@ -3,10 +3,17 @@
 ## Objetivo
 Tener una base web responsive consistente para `habitante` y `moderador` antes de migrar pantallas a app móvil.
 
-## Fase 1
-- Convertir `Sidebar` a drawer móvil con botón flotante, backdrop y cierre automático al navegar.
-- Normalizar `main` layouts para usar `px-4 sm:px-6 lg:px-8` y tablas con `overflow-x-auto`.
-- Ajustar encabezados de módulos para que acciones y búsqueda colapsen en una sola columna bajo `md`.
+## Estado de avance
+- [x] Fase 1 — completada.
+- [ ] Fase 2, 3 y 4 — pendientes (ver `MOBILE_APP_PLAN.md` para la Fase 4).
+
+## Fase 1 (completada)
+- [x] Convertir `Sidebar` a drawer móvil con botón flotante, backdrop y cierre automático al navegar.
+- [x] Normalizar `main` layouts: padding `p-4 pt-20 sm:p-6 sm:pt-24 lg:pt-6` en `HabitantePage` y en todas las páginas con `Sidebar`.
+- [x] Hacer `ModuleHeader` (título, búsqueda y acción) colapsable en una columna bajo `md`.
+- [x] Envolver tablas en `overflow-x-auto` con `min-w-[720px]`+ (`pagos`, `admin/pagos/[cuotaId]`); `usuarios` y `reservaciones` ya lo traían.
+- [x] Encabezados de módulos: `text-3xl→5xl` responsive en `pagos`, `admin/pagos`, `admin/reportes`, `objetos perdidos`.
+- [x] Grid de resumen de pagos responsivo (`grid-cols-2 → sm:3 → lg:6`).
 
 ## Fase 2
 - Reemplazar tablas críticas por tarjetas en móvil: `reservaciones`, `usuarios`, `pagos`, `reportes`.
@@ -20,10 +27,7 @@ Tener una base web responsive consistente para `habitante` y `moderador` antes d
 - Añadir estados vacíos, skeletons y botones primarios de tamaño táctil mínimo `44px`.
 
 ## Fase 4
-- Preparar equivalencia con app móvil:
-- Documentar pantallas, acciones primarias y dependencias de cada rol.
-- Separar lógica de datos de presentación para reutilizar servicios y tipos.
-- Identificar módulos que conviene mover primero a React Native o Flutter por complejidad baja/media.
+- Preparar equivalencia con app móvil — ver `docs/MOBILE_APP_PLAN.md`.
 
 ## Riesgos
 - Varias páginas siguen con JSX muy compacto o en una sola línea, lo que dificulta mantenimiento.

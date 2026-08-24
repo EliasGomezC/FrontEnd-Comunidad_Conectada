@@ -138,7 +138,7 @@ export default function DirectorioPage() {
   );
   const modalTitle = modalType === "create" ? "Nuevo Contacto" : modalType === "edit" ? "Editar Contacto" : modalType === "view" ? selectedContact?.nombre || "Ver Contacto" : undefined;
 
-  return <div className="flex min-h-screen bg-[#eef2f7]"><Sidebar activeItem="Directorio" /><main className="flex-1 p-[30px]">
+  return <div className="flex min-h-screen bg-[#eef2f7]"><Sidebar activeItem="Directorio" /><main className="min-w-0 flex-1 p-4 pt-20 sm:p-6 sm:pt-24 lg:p-[30px] lg:pt-6">
     <div className="mb-8 flex flex-wrap items-center justify-between gap-5">
       <div>
         <h1 className="m-0 text-5xl font-bold text-[#0a496a]">Directorio Virtual</h1>

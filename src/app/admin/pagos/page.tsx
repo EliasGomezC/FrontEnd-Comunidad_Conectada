@@ -52,12 +52,12 @@ export default function PagosModeradorPage() {
 
   return <div className="flex min-h-screen bg-[#dfe5eb]">
     <Sidebar activeItem="Pagos" />
-    <main className="flex-1 p-8">
-      <div className="mb-8 flex flex-wrap items-end justify-between gap-5">
-        <div><h1 className="text-5xl font-bold text-[#0a496a]">Control de Pagos</h1><p className="text-xl text-[#295c7f]">Administración de pagos por servicio o concepto</p></div>
-        <div className="flex flex-1 justify-end gap-5">
+    <main className="min-w-0 flex-1 p-4 pt-20 sm:p-6 sm:pt-24 lg:pt-6">
+      <div className="mb-6 flex flex-col justify-between gap-4 md:mb-8 md:flex-row md:items-end md:gap-5">
+        <div className="min-w-0"><h1 className="text-3xl font-bold text-[#0a496a] sm:text-4xl md:text-5xl">Control de Pagos</h1><p className="text-lg text-[#295c7f] md:text-xl">Administración de pagos por servicio o concepto</p></div>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center md:flex-1 md:justify-end md:gap-5">
           <label className="flex w-full max-w-xl items-center gap-3 rounded-xl bg-white px-5 shadow"><IoSearch className="text-3xl text-[#0a496a]"/><input value={search} onChange={(e)=>{setSearch(e.target.value);setPage(1);}} placeholder="Buscar" className="w-full py-4 outline-none" /></label>
-          <button type="button" onClick={()=>setOpen(true)} className="flex items-center gap-2 whitespace-nowrap rounded-xl bg-[#0a496a] px-6 py-4 font-bold text-white"><IoAdd size={28}/> Nuevo pago</button>
+          <button type="button" onClick={()=>setOpen(true)} className="flex items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-[#0a496a] px-6 py-4 font-bold text-white"><IoAdd size={28}/> Nuevo pago</button>
         </div>
       </div>
       {error && <p className="mb-4 rounded-lg bg-red-100 p-3 text-red-700">{error}</p>}

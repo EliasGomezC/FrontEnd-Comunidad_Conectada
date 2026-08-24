@@ -58,7 +58,7 @@ export default function UsuariosPage() {
   const totalPages = Math.max(1, Math.ceil(count / 10));
   if (activeMembership?.rol !== "moderador") return <div className="p-10 text-xl">Este módulo es exclusivo para moderadores.</div>;
 
-  return <div className="flex min-h-screen bg-[#e5ebf1]"><Sidebar activeItem="Usuarios" /><main className="min-w-0 flex-1 p-5 text-[#073f60] md:p-10">
+  return <div className="flex min-h-screen bg-[#e5ebf1]"><Sidebar activeItem="Usuarios" /><main className="min-w-0 flex-1 p-5 pt-20 text-[#073f60] sm:p-6 sm:pt-24 md:p-10 lg:pt-10">
     <div className="mx-auto max-w-7xl">
       <h1 className="text-4xl font-extrabold">Gestión de Usuarios</h1>
       <p className="mt-1 text-xl leading-tight">Administración de todos los<br />usuarios de la privada residencial</p>
