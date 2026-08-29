@@ -38,6 +38,7 @@ export default function DirectorioPage() {
   const [category, setCategory] = useState("");
   const [filterOpen, setFilterOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [modalError, setModalError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [modalType, setModalType] = useState<ModalType | null>(null);
   const [selectedContact, setSelectedContact] = useState<DirectorioContacto | null>(null);
@@ -57,10 +58,11 @@ export default function DirectorioPage() {
     void load();
   }, [load]);
 
-  const close = () => { revokeMainPreview(); setModalType(null); setSelectedContact(null); setForm(empty()); setMainPreview(null); setGalleryImages([]); setGalleryFiles([]); setGalleryRemoved([]); };
-  const openCreate = () => { setForm(empty(privada)); setSelectedContact(null); setMainPreview(null); setGalleryImages([]); setGalleryFiles([]); setGalleryRemoved([]); setModalType("create"); };
-  const openView = (item: DirectorioContacto) => { setSelectedContact(item); setModalType("view"); };
+  const close = () => { revokeMainPreview(); setModalType(null); setSelectedContact(null); setForm(empty()); setMainPreview(null); setGalleryImages([]); setGalleryFiles([]); setGalleryRemoved([]); setModalError(null); };
+  const openCreate = () => { setForm(empty(privada)); setSelectedContact(null); setMainPreview(null); setGalleryImages([]); setGalleryFiles([]); setGalleryRemoved([]); setModalError(null); setModalType("create"); };
+  const openView = (item: DirectorioContacto) => { setSelectedContact(item); setModalError(null); setModalType("view"); };
   const openEdit = (item: DirectorioContacto) => {
+    setModalError(null);
     setSelectedContact(item);
     setForm({
       privada: item.privada,
@@ -81,11 +83,11 @@ export default function DirectorioPage() {
     setGalleryRemoved([]);
     setModalType("edit");
   };
-  const openDelete = (item: DirectorioContacto) => { setSelectedContact(item); setModalType("delete"); };
+  const openDelete = (item: DirectorioContacto) => { setSelectedContact(item); setModalError(null); setModalType("delete"); };
 
   const submit = async () => {
     if (!token || !modalType) return;
-    setSaving(true); setError(null);
+    setSaving(true); setModalError(null);
     try {
       const data: DirectorioPayload = {
         ...form,
@@ -96,7 +98,7 @@ export default function DirectorioPage() {
       if (modalType === "edit" && selectedContact) await updateContacto(token, selectedContact.id, data);
       else await createContacto(token, data);
       close(); await load();
-    } catch (cause) { setError(cause instanceof Error ? cause.message : "No se pudo guardar el contacto."); }
+    } catch (cause) { setModalError(cause instanceof Error ? cause.message : "No se pudo guardar el contacto."); }
     finally { setSaving(false); }
   };
 
@@ -107,9 +109,9 @@ export default function DirectorioPage() {
 
   const confirmDelete = async () => {
     if (!token || !selectedContact) return;
-    setSaving(true); setError(null);
+    setSaving(true); setModalError(null);
     try { await deleteContacto(token, selectedContact.id); close(); await load(); }
-    catch (cause) { setError(cause instanceof Error ? cause.message : "No se pudo eliminar el contacto."); }
+    catch (cause) { setModalError(cause instanceof Error ? cause.message : "No se pudo eliminar el contacto."); }
     finally { setSaving(false); }
   };
 
@@ -138,7 +140,7 @@ export default function DirectorioPage() {
   );
   const modalTitle = modalType === "create" ? "Nuevo Contacto" : modalType === "edit" ? "Editar Contacto" : modalType === "view" ? selectedContact?.nombre || "Ver Contacto" : undefined;
 
-  return <div className="flex min-h-screen bg-[#eef2f7]"><Sidebar activeItem="Directorio" /><main className="min-w-0 flex-1 p-4 pt-20 sm:p-6 sm:pt-24 lg:p-[30px] lg:pt-6">
+  return <div className="flex min-h-screen bg-[#eef2f7]"><Sidebar activeItem="Directorio" /><main className="min-w-0 flex-1 p-4 pt-20 sm:p-6 sm:pt-24 md:p-[30px] md:pt-6">
     <div className="mb-8 flex flex-wrap items-center justify-between gap-5">
       <div>
         <h1 className="m-0 text-5xl font-bold text-[#0a496a]">Directorio Virtual</h1>
@@ -218,10 +220,11 @@ export default function DirectorioPage() {
       ) : modalType === "view" ? (
         <>
           <Button variant="secondary" type="button" onClick={close} style={{ flex: 1 }}>Regresar</Button>
-          <Button variant="primary" type="button" onClick={() => selectedContact && openEdit(selectedContact)} style={{ flex: 1 }}>Editar</Button>
+          <Button variant="primary" type="button" onClick={(event) => { event.preventDefault(); if (selectedContact) openEdit(selectedContact); }} style={{ flex: 1 }}>Editar</Button>
         </>
       ) : undefined}
     >
+      {modalError && <p className="mb-4 rounded bg-red-100 p-3 text-red-700">{modalError}</p>}
       {(modalType === "create" || modalType === "edit") && (
         <form id="contact-form" onSubmit={handleSubmit}>
           <ContactForm
