@@ -13,7 +13,7 @@ export default function HabitantePage({ activeItem, children }: { activeItem: st
     else if (!isLoading && !activeMembership) router.replace("/lobby");
   }, [activeMembership, isAuthenticated, isLoading, router]);
   if (isLoading || !isAuthenticated || !activeMembership) return <div className="grid min-h-screen place-items-center bg-[#dfe5eb] text-xl text-[#0a496a]">Cargando...</div>;
-  return <div className="flex min-h-screen bg-[#dfe5eb]"><Sidebar activeItem={activeItem}/><main className="min-w-0 flex-1 p-4 pt-20 sm:p-6 sm:pt-24 lg:pt-6">{children}</main></div>;
+  return <div className="flex min-h-screen bg-[#dfe5eb]"><Sidebar activeItem={activeItem}/><main className="min-w-0 flex-1 p-4 pt-20 sm:p-6 sm:pt-24 md:pt-6">{children}</main></div>;
 }
 
 export function ModuleHeader({ title, subtitle, search, onSearch, action }: { title:string; subtitle:string; search:string; onSearch:(value:string)=>void; action?:React.ReactNode }) {

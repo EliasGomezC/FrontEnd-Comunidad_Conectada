@@ -52,7 +52,7 @@ export default function PagosModeradorPage() {
 
   return <div className="flex min-h-screen bg-[#dfe5eb]">
     <Sidebar activeItem="Pagos" />
-    <main className="min-w-0 flex-1 p-4 pt-20 sm:p-6 sm:pt-24 lg:pt-6">
+    <main className="min-w-0 flex-1 p-4 pt-20 sm:p-6 sm:pt-24 md:pt-6">
       <div className="mb-6 flex flex-col justify-between gap-4 md:mb-8 md:flex-row md:items-end md:gap-5">
         <div className="min-w-0"><h1 className="text-3xl font-bold text-[#0a496a] sm:text-4xl md:text-5xl">Control de Pagos</h1><p className="text-lg text-[#295c7f] md:text-xl">Administración de pagos por servicio o concepto</p></div>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center md:flex-1 md:justify-end md:gap-5">

@@ -89,14 +89,14 @@ const Sidebar = ({ activeItem }: SidebarProps) => {
       <button
         type="button"
         onClick={() => setMobileOpen(true)}
-        className="fixed left-4 top-4 z-40 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-[#0a496a] text-white shadow-lg lg:hidden"
+        className="fixed left-4 top-4 z-40 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-[#0a496a] text-white shadow-lg md:hidden"
         aria-label="Abrir menú"
       >
         <IoMenu size={24} />
       </button>
-      {mobileOpen && <button type="button" className="fixed inset-0 z-40 bg-slate-950/45 lg:hidden" onClick={() => setMobileOpen(false)} aria-label="Cerrar menú" />}
-      <aside className={`fixed inset-y-0 left-0 z-50 flex h-screen w-[280px] shrink-0 flex-col overflow-hidden bg-[#0a496a] p-5 text-white shadow-lg transition-transform lg:sticky lg:top-5 lg:m-5 lg:h-[calc(100vh-2.5rem)] lg:rounded-[30px] ${mobileOpen ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0`}>
-      <div className="mb-3 flex items-center justify-end lg:hidden">
+      {mobileOpen && <button type="button" className="fixed inset-0 z-40 bg-slate-950/45 md:hidden" onClick={() => setMobileOpen(false)} aria-label="Cerrar menú" />}
+      <aside className={`fixed inset-y-0 left-0 z-50 flex h-screen w-[280px] shrink-0 flex-col overflow-hidden bg-[#0a496a] p-5 text-white shadow-lg transition-transform md:sticky md:top-5 md:m-5 md:h-[calc(100vh-2.5rem)] md:rounded-[30px] ${mobileOpen ? "translate-x-0" : "-translate-x-full"} md:translate-x-0`}>
+      <div className="mb-3 flex items-center justify-end md:hidden">
         <button type="button" onClick={() => setMobileOpen(false)} aria-label="Cerrar menú" className="rounded-lg bg-white/10 p-2 text-white">
           <IoClose size={22} />
         </button>
@@ -122,7 +122,7 @@ const Sidebar = ({ activeItem }: SidebarProps) => {
         </div>}
       </div>}
 
-      <nav className="mt-6 flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto pr-1">
+      <nav className="sidebar-scroll mt-6 flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto pr-1">
         {isSystemAdmin && <Link href="/admin-comunidad" className="mb-3 flex items-center justify-center rounded-xl bg-[#c1e1c1] px-4 py-3 font-semibold text-[#234b31]">Administración global</Link>}
         {visibleMenuItems.map((item) => (
           <Link
