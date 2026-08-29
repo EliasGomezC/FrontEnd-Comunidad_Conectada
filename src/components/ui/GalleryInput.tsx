@@ -99,6 +99,7 @@ export default function GalleryInput({
             }}
           />
           <button
+            type="button"
             onClick={() => removeAt(index)}
             aria-label="Quitar imagen"
             className="grid place-items-center rounded-full text-white"
@@ -132,6 +133,7 @@ export default function GalleryInput({
         }}
       />
       <button
+        type="button"
         onClick={() => fileInput.current?.click()}
         className="flex flex-col items-center justify-center"
         style={{
