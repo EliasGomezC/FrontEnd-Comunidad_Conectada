@@ -178,8 +178,8 @@ export default function DirectorioPage() {
     ) : (
       <div className="grid grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-3">
         {filtered.map((item) => (
-          <article key={item.id} onClick={() => openView(item)} className="group cursor-pointer rounded-[26px] bg-white shadow-lg transition hover:-translate-y-1 hover:shadow-xl">
-            <div className="flex h-full">
+          <article key={item.id} onClick={() => openView(item)} className="group flex cursor-pointer flex-col rounded-[26px] bg-white shadow-lg transition hover:-translate-y-1 hover:shadow-xl">
+            <div className="flex flex-1">
               <div className="flex min-w-0 flex-1 flex-col p-6">
                 <h2 className="truncate text-xl font-bold text-slate-900">{item.nombre}</h2>
                 <span className="mt-3 inline-block w-fit rounded-lg bg-[#bfe6b5] px-3 py-1 text-sm font-medium text-[#215d2d]">{item.categorias || "Sin categoría"}</span>
