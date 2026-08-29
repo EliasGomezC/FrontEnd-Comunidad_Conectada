@@ -185,11 +185,6 @@ export default function DirectorioPage() {
                 <span className="mt-3 inline-block w-fit rounded-lg bg-[#bfe6b5] px-3 py-1 text-sm font-medium text-[#215d2d]">{item.categorias || "Sin categoría"}</span>
                 <p className="mt-3 flex items-center gap-2 text-slate-700"><IoCallOutline className="text-[#0a496a]" /> {item.num_tel || "Sin teléfono"}</p>
                 <p className="mt-2 line-clamp-2 text-sm text-slate-600">{item.descripcion || item.ubicacion || "Sin descripción"}</p>
-                <div className="mt-5 flex gap-2">
-                  <button onClick={(e) => { e.stopPropagation(); openView(item); }} className="rounded-lg bg-[#0a496a] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#12486d]">Mostrar</button>
-                  <button onClick={(e) => { e.stopPropagation(); openEdit(item); }} className="rounded-lg bg-[#ffd58d] px-4 py-2 text-sm font-semibold text-black transition hover:brightness-95">Editar</button>
-                  <button onClick={(e) => { e.stopPropagation(); openDelete(item); }} className="rounded-lg bg-[#ffb8b8] px-4 py-2 text-sm font-semibold text-black transition hover:brightness-95">Eliminar</button>
-                </div>
               </div>
               <div className="flex w-[180px] shrink-0 items-stretch p-3 pl-0">
                 <div className="h-[170px] w-full overflow-hidden rounded-2xl">
@@ -201,6 +196,11 @@ export default function DirectorioPage() {
                   )}
                 </div>
               </div>
+            </div>
+            <div className="flex gap-2 px-6 pb-6 pt-1">
+              <button type="button" onClick={(e) => { e.stopPropagation(); openView(item); }} className="rounded-lg bg-[#0a496a] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#12486d]">Mostrar</button>
+              <button type="button" onClick={(e) => { e.stopPropagation(); openEdit(item); }} className="rounded-lg bg-[#ffd58d] px-4 py-2 text-sm font-semibold text-black transition hover:brightness-95">Editar</button>
+              <button type="button" onClick={(e) => { e.stopPropagation(); openDelete(item); }} className="rounded-lg bg-[#ffb8b8] px-4 py-2 text-sm font-semibold text-black transition hover:brightness-95">Eliminar</button>
             </div>
           </article>
         ))}
