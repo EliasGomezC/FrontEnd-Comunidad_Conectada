@@ -38,6 +38,7 @@ export default function ImageUploader({
             }}
           />
           <button
+            type="button"
             onClick={() => onChange(null)}
             aria-label="Quitar imagen"
             className="grid place-items-center rounded-full text-white"
@@ -57,6 +58,7 @@ export default function ImageUploader({
         </div>
       ) : (
         <button
+          type="button"
           onClick={() => inputRef.current?.click()}
           onDragOver={(event) => {
             event.preventDefault();

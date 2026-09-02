@@ -38,6 +38,8 @@ export default function ContactForm({
   gallery,
   onGalleryChange,
 }: ContactFormProps) {
+  const isLocal = (form.tipo_ubicacion || "local") === "local";
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       <Input
@@ -69,6 +71,36 @@ export default function ContactForm({
         />
       </div>
 
+      <div style={{ display: "grid", gridTemplateColumns: "45% 55%", gap: 16 }}>
+        <Select
+          label="Ubicación del servicio"
+          value={form.tipo_ubicacion || "local"}
+          onChange={(value) => onChange({ tipo_ubicacion: value as "local" | "externo" })}
+          options={[
+            { value: "local", label: "Dentro de la privada" },
+            { value: "externo", label: "Fuera de la privada" },
+          ]}
+          required
+        />
+        {isLocal ? (
+          <Input
+            label="Número de casa"
+            value={form.numero_casa || ""}
+            onChange={(value) => onChange({ numero_casa: value, direccion_externa: "" })}
+            placeholder="Ej. Casa 24"
+            required
+          />
+        ) : (
+          <Input
+            label="Dirección"
+            value={form.direccion_externa || ""}
+            onChange={(value) => onChange({ direccion_externa: value, numero_casa: "" })}
+            placeholder="Calle, colonia y referencia"
+            required
+          />
+        )}
+      </div>
+
       <Input
         label="Descripción"
         value={form.descripcion || ""}
@@ -89,7 +121,20 @@ export default function ContactForm({
 
       <div>
         <span style={labelStyle}>Ubicación</span>
-        <ContactLocation location={form.ubicacion} />
+        <div style={{ display: "grid", gap: 12 }}>
+          {!isLocal && (
+            <Input
+              label="Link de Google Maps"
+              value={form.maps_url || ""}
+              onChange={(value) => onChange({ maps_url: value })}
+              placeholder="https://maps.google.com/..."
+            />
+          )}
+          <ContactLocation
+            location={isLocal ? `Dentro de la privada · Casa ${form.numero_casa || "..."}` : form.direccion_externa}
+            mapsUrl={!isLocal ? form.maps_url : undefined}
+          />
+        </div>
       </div>
     </div>
   );

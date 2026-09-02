@@ -14,7 +14,19 @@ import ContactDetails from "@/components/Modal/ContactDetails";
 import DeleteConfirmation from "@/components/Modal/DeleteConfirmation";
 import { IoCallOutline, IoFilter, IoImageOutline } from "react-icons/io5";
 
-const empty = (privada = ""): DirectorioPayload => ({ privada, nombre: "", categorias: "", num_tel: "", codigo: "", descripcion: "", ubicacion: "" });
+const empty = (privada = ""): DirectorioPayload => ({
+  privada,
+  nombre: "",
+  categorias: "",
+  num_tel: "",
+  codigo: "",
+  descripcion: "",
+  ubicacion: "",
+  tipo_ubicacion: "local",
+  numero_casa: "",
+  direccion_externa: "",
+  maps_url: "",
+});
 
 type ModalType = "create" | "view" | "edit" | "delete";
 
@@ -26,6 +38,7 @@ export default function DirectorioPage() {
   const [category, setCategory] = useState("");
   const [filterOpen, setFilterOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [modalError, setModalError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [modalType, setModalType] = useState<ModalType | null>(null);
   const [selectedContact, setSelectedContact] = useState<DirectorioContacto | null>(null);
@@ -45,23 +58,36 @@ export default function DirectorioPage() {
     void load();
   }, [load]);
 
-  const close = () => { revokeMainPreview(); setModalType(null); setSelectedContact(null); setForm(empty()); setMainPreview(null); setGalleryImages([]); setGalleryFiles([]); setGalleryRemoved([]); };
-  const openCreate = () => { setForm(empty(privada)); setSelectedContact(null); setMainPreview(null); setGalleryImages([]); setGalleryFiles([]); setGalleryRemoved([]); setModalType("create"); };
-  const openView = (item: DirectorioContacto) => { setSelectedContact(item); setModalType("view"); };
+  const close = () => { revokeMainPreview(); setModalType(null); setSelectedContact(null); setForm(empty()); setMainPreview(null); setGalleryImages([]); setGalleryFiles([]); setGalleryRemoved([]); setModalError(null); };
+  const openCreate = () => { setForm(empty(privada)); setSelectedContact(null); setMainPreview(null); setGalleryImages([]); setGalleryFiles([]); setGalleryRemoved([]); setModalError(null); setModalType("create"); };
+  const openView = (item: DirectorioContacto) => { setSelectedContact(item); setModalError(null); setModalType("view"); };
   const openEdit = (item: DirectorioContacto) => {
+    setModalError(null);
     setSelectedContact(item);
-    setForm({ privada: item.privada, nombre: item.nombre, categorias: item.categorias, num_tel: item.num_tel, codigo: item.codigo, descripcion: item.descripcion || "", ubicacion: item.ubicacion || "" });
+    setForm({
+      privada: item.privada,
+      nombre: item.nombre,
+      categorias: item.categorias,
+      num_tel: item.num_tel,
+      codigo: item.codigo,
+      descripcion: item.descripcion || "",
+      ubicacion: item.ubicacion || "",
+      tipo_ubicacion: item.tipo_ubicacion || "local",
+      numero_casa: item.numero_casa || "",
+      direccion_externa: item.direccion_externa || "",
+      maps_url: item.maps_url || "",
+    });
     setMainPreview(item.imagenes || null);
     setGalleryImages(item.galeria || []);
     setGalleryFiles([]);
     setGalleryRemoved([]);
     setModalType("edit");
   };
-  const openDelete = (item: DirectorioContacto) => { setSelectedContact(item); setModalType("delete"); };
+  const openDelete = (item: DirectorioContacto) => { setSelectedContact(item); setModalError(null); setModalType("delete"); };
 
   const submit = async () => {
     if (!token || !modalType) return;
-    setSaving(true); setError(null);
+    setSaving(true); setModalError(null);
     try {
       const data: DirectorioPayload = {
         ...form,
@@ -72,7 +98,7 @@ export default function DirectorioPage() {
       if (modalType === "edit" && selectedContact) await updateContacto(token, selectedContact.id, data);
       else await createContacto(token, data);
       close(); await load();
-    } catch (cause) { setError(cause instanceof Error ? cause.message : "No se pudo guardar el contacto."); }
+    } catch (cause) { setModalError(cause instanceof Error ? cause.message : "No se pudo guardar el contacto."); }
     finally { setSaving(false); }
   };
 
@@ -83,9 +109,9 @@ export default function DirectorioPage() {
 
   const confirmDelete = async () => {
     if (!token || !selectedContact) return;
-    setSaving(true); setError(null);
+    setSaving(true); setModalError(null);
     try { await deleteContacto(token, selectedContact.id); close(); await load(); }
-    catch (cause) { setError(cause instanceof Error ? cause.message : "No se pudo eliminar el contacto."); }
+    catch (cause) { setModalError(cause instanceof Error ? cause.message : "No se pudo eliminar el contacto."); }
     finally { setSaving(false); }
   };
 
@@ -114,7 +140,7 @@ export default function DirectorioPage() {
   );
   const modalTitle = modalType === "create" ? "Nuevo Contacto" : modalType === "edit" ? "Editar Contacto" : modalType === "view" ? selectedContact?.nombre || "Ver Contacto" : undefined;
 
-  return <div className="flex min-h-screen bg-[#eef2f7]"><Sidebar activeItem="Directorio" /><main className="flex-1 p-[30px]">
+  return <div className="flex min-h-screen bg-[#eef2f7]"><Sidebar activeItem="Directorio" /><main className="min-w-0 flex-1 p-4 pt-20 sm:p-6 sm:pt-24 md:p-[30px] md:pt-6">
     <div className="mb-8 flex flex-wrap items-center justify-between gap-5">
       <div>
         <h1 className="m-0 text-5xl font-bold text-[#0a496a]">Directorio Virtual</h1>
@@ -152,18 +178,13 @@ export default function DirectorioPage() {
     ) : (
       <div className="grid grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-3">
         {filtered.map((item) => (
-          <article key={item.id} onClick={() => openView(item)} className="group cursor-pointer rounded-[26px] bg-white shadow-lg transition hover:-translate-y-1 hover:shadow-xl">
-            <div className="flex h-full">
+          <article key={item.id} onClick={() => openView(item)} className="group flex cursor-pointer flex-col rounded-[26px] bg-white shadow-lg transition hover:-translate-y-1 hover:shadow-xl">
+            <div className="flex flex-1">
               <div className="flex min-w-0 flex-1 flex-col p-6">
                 <h2 className="truncate text-xl font-bold text-slate-900">{item.nombre}</h2>
                 <span className="mt-3 inline-block w-fit rounded-lg bg-[#bfe6b5] px-3 py-1 text-sm font-medium text-[#215d2d]">{item.categorias || "Sin categoría"}</span>
                 <p className="mt-3 flex items-center gap-2 text-slate-700"><IoCallOutline className="text-[#0a496a]" /> {item.num_tel || "Sin teléfono"}</p>
                 <p className="mt-2 line-clamp-2 text-sm text-slate-600">{item.descripcion || item.ubicacion || "Sin descripción"}</p>
-                <div className="mt-5 flex gap-2">
-                  <button onClick={(e) => { e.stopPropagation(); openView(item); }} className="rounded-lg bg-[#0a496a] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#12486d]">Mostrar</button>
-                  <button onClick={(e) => { e.stopPropagation(); openEdit(item); }} className="rounded-lg bg-[#ffd58d] px-4 py-2 text-sm font-semibold text-black transition hover:brightness-95">Editar</button>
-                  <button onClick={(e) => { e.stopPropagation(); openDelete(item); }} className="rounded-lg bg-[#ffb8b8] px-4 py-2 text-sm font-semibold text-black transition hover:brightness-95">Eliminar</button>
-                </div>
               </div>
               <div className="flex w-[180px] shrink-0 items-stretch p-3 pl-0">
                 <div className="h-[170px] w-full overflow-hidden rounded-2xl">
@@ -175,6 +196,11 @@ export default function DirectorioPage() {
                   )}
                 </div>
               </div>
+            </div>
+            <div className="flex gap-2 px-6 pb-6 pt-1">
+              <button type="button" onClick={(e) => { e.stopPropagation(); openView(item); }} className="rounded-lg bg-[#0a496a] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#12486d]">Mostrar</button>
+              <button type="button" onClick={(e) => { e.stopPropagation(); openEdit(item); }} className="rounded-lg bg-[#ffd58d] px-4 py-2 text-sm font-semibold text-black transition hover:brightness-95">Editar</button>
+              <button type="button" onClick={(e) => { e.stopPropagation(); openDelete(item); }} className="rounded-lg bg-[#ffb8b8] px-4 py-2 text-sm font-semibold text-black transition hover:brightness-95">Eliminar</button>
             </div>
           </article>
         ))}
@@ -194,10 +220,11 @@ export default function DirectorioPage() {
       ) : modalType === "view" ? (
         <>
           <Button variant="secondary" type="button" onClick={close} style={{ flex: 1 }}>Regresar</Button>
-          <Button variant="primary" type="button" onClick={() => selectedContact && openEdit(selectedContact)} style={{ flex: 1 }}>Editar</Button>
+          <Button variant="primary" type="button" onClick={(event) => { event.preventDefault(); if (selectedContact) openEdit(selectedContact); }} style={{ flex: 1 }}>Editar</Button>
         </>
       ) : undefined}
     >
+      {modalError && <p className="mb-4 rounded bg-red-100 p-3 text-red-700">{modalError}</p>}
       {(modalType === "create" || modalType === "edit") && (
         <form id="contact-form" onSubmit={handleSubmit}>
           <ContactForm

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { FormEvent, useState } from "react";
+import { IoEyeOffOutline, IoEyeOutline } from "react-icons/io5";
 import { useAuth } from "@/features/authentication/AuthContext";
 import "../login/fondo.css";
 
@@ -17,11 +18,31 @@ export default function RegisterPage() {
     password: "",
     password_confirm: "",
   });
+  const [showPassword, setShowPassword] = useState(false);
+  const [showPasswordConfirm, setShowPasswordConfirm] = useState(false);
+  const [passwordMatch, setPasswordMatch] = useState<"idle" | "checking" | "match" | "mismatch">("idle");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [matchTimer, setMatchTimer] = useState<number | null>(null);
+
+  const schedulePasswordCheck = (nextForm: typeof form) => {
+    if (matchTimer) window.clearTimeout(matchTimer);
+    if (!nextForm.password && !nextForm.password_confirm) {
+      setPasswordMatch("idle");
+      return;
+    }
+    setPasswordMatch("checking");
+    const timer = window.setTimeout(() => {
+      setPasswordMatch(nextForm.password === nextForm.password_confirm ? "match" : "mismatch");
+    }, 250);
+    setMatchTimer(timer);
+  };
 
   const update = (field: keyof typeof form) => (event: React.ChangeEvent<HTMLInputElement>) => {
-    setForm((current) => ({ ...current, [field]: event.target.value }));
+    const value = event.target.value;
+    const nextForm = { ...form, [field]: value };
+    setForm(nextForm);
+    if (field === "password" || field === "password_confirm") schedulePasswordCheck(nextForm);
   };
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
@@ -48,13 +69,17 @@ export default function RegisterPage() {
     ["telefono", "Teléfono", "664-123-4567", "tel"],
     ["numero_casa", "Número de casa", "Ej. 24", "text"],
     ["codigo_postal", "Código postal", "Ej. 22000", "text"],
-    ["password", "Contraseña", "Mínimo 8 caracteres", "password"],
-    ["password_confirm", "Confirmar contraseña", "Repite tu contraseña", "password"],
   ];
 
+  const passwordStatus = passwordMatch === "match"
+    ? "text-green-700"
+    : passwordMatch === "mismatch"
+      ? "text-red-700"
+      : "text-slate-500";
+
   return (
-    <main className="min-h-screen bg-[#e0e5eb] flex items-center justify-center p-6">
-      <form onSubmit={submit} className="w-full max-w-2xl relative z-10 rounded-[26px] bg-[#f5f7fa] p-8 shadow-xl">
+    <main className="flex min-h-screen items-center justify-center bg-[#e0e5eb] p-4 sm:p-6">
+      <form onSubmit={submit} className="relative z-10 w-full max-w-2xl rounded-[26px] bg-[#f5f7fa] p-6 shadow-xl sm:p-8">
         <div className="mb-7 text-center">
           <h1 className="text-3xl font-extrabold text-[#0a496a]">Crear cuenta</h1>
           <p className="mt-2 text-gray-600">Regístrate como habitante y después únete o crea una privada.</p>
@@ -73,7 +98,44 @@ export default function RegisterPage() {
               />
             </label>
           ))}
+          <label className="flex flex-col gap-2 text-sm font-semibold text-[#374151]">
+            Contraseña
+            <div className="flex h-12 items-center rounded-xl border border-gray-200 bg-white px-4">
+              <input
+                required
+                type={showPassword ? "text" : "password"}
+                value={form.password}
+                onChange={update("password")}
+                placeholder="Mínimo 8 caracteres"
+                className="min-w-0 flex-1 bg-transparent text-base font-normal outline-none"
+              />
+              <button type="button" onClick={() => setShowPassword((current) => !current)} className="text-slate-500">
+                {showPassword ? <IoEyeOffOutline size={20} /> : <IoEyeOutline size={20} />}
+              </button>
+            </div>
+          </label>
+          <label className="flex flex-col gap-2 text-sm font-semibold text-[#374151]">
+            Confirmar contraseña
+            <div className="flex h-12 items-center rounded-xl border border-gray-200 bg-white px-4">
+              <input
+                required
+                type={showPasswordConfirm ? "text" : "password"}
+                value={form.password_confirm}
+                onChange={update("password_confirm")}
+                placeholder="Repite tu contraseña"
+                className="min-w-0 flex-1 bg-transparent text-base font-normal outline-none"
+              />
+              <button type="button" onClick={() => setShowPasswordConfirm((current) => !current)} className="text-slate-500">
+                {showPasswordConfirm ? <IoEyeOffOutline size={20} /> : <IoEyeOutline size={20} />}
+              </button>
+            </div>
+          </label>
         </div>
+        <p className={`mt-3 text-sm ${passwordStatus}`}>
+          {passwordMatch === "checking" && "Verificando contraseñas..."}
+          {passwordMatch === "match" && "Las contraseñas coinciden."}
+          {passwordMatch === "mismatch" && "Las contraseñas no coinciden."}
+        </p>
         {error && <p role="alert" className="mt-5 rounded-lg bg-red-50 p-3 text-center text-sm text-red-700">{error}</p>}
         <button disabled={loading} className="mt-6 h-12 w-full rounded-xl bg-[#0a496a] font-bold text-white hover:bg-[#3a7594] disabled:opacity-50">
           {loading ? "Creando cuenta..." : "Registrarme"}

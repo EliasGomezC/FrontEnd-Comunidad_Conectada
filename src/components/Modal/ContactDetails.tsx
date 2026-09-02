@@ -13,9 +13,12 @@ interface ContactDetailsProps {
 
 export default function ContactDetails({ contact }: ContactDetailsProps) {
   const locationRef = useRef<HTMLDivElement>(null);
+  const locationSummary = contact.tipo_ubicacion === "externo"
+    ? contact.direccion_externa || contact.ubicacion
+    : `Dentro de la privada · Casa ${contact.numero_casa || "sin especificar"}`;
 
   return (
-    <div className="grid grid-cols-2 gap-8">
+    <div className="grid gap-8 md:grid-cols-2">
       <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
         {contact.imagenes ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -54,16 +57,27 @@ export default function ContactDetails({ contact }: ContactDetailsProps) {
         </p>
 
         <div ref={locationRef}>
-          <ContactLocation location={contact.ubicacion} />
+          <ContactLocation location={locationSummary} mapsUrl={contact.maps_url} compact />
         </div>
 
-        <button
-          onClick={() => locationRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" })}
-          className="flex w-fit items-center gap-2 rounded-xl bg-[#0a496a] px-5 py-2.5 font-semibold text-white transition hover:bg-[#12486d]"
-        >
-          <IoLocationOutline size={18} />
-          Ver ubicación
-        </button>
+        <div className="flex flex-wrap gap-3">
+          {contact.num_tel && (
+            <a
+              href={`tel:${contact.num_tel}`}
+              className="flex w-fit items-center gap-2 rounded-xl bg-[#0a496a] px-5 py-2.5 font-semibold text-white transition hover:bg-[#12486d]"
+            >
+              <IoCallOutline size={18} />
+              Llamar
+            </a>
+          )}
+          <button
+            onClick={() => locationRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" })}
+            className="flex w-fit items-center gap-2 rounded-xl bg-sky-100 px-5 py-2.5 font-semibold text-[#0a496a] transition hover:bg-sky-200"
+          >
+            <IoLocationOutline size={18} />
+            Ver ubicación
+          </button>
+        </div>
       </div>
     </div>
   );

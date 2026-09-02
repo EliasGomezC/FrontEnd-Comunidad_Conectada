@@ -13,11 +13,20 @@ export default function HabitantePage({ activeItem, children }: { activeItem: st
     else if (!isLoading && !activeMembership) router.replace("/lobby");
   }, [activeMembership, isAuthenticated, isLoading, router]);
   if (isLoading || !isAuthenticated || !activeMembership) return <div className="grid min-h-screen place-items-center bg-[#dfe5eb] text-xl text-[#0a496a]">Cargando...</div>;
-  return <div className="flex min-h-screen bg-[#dfe5eb]"><Sidebar activeItem={activeItem}/><main className="min-w-0 flex-1 p-8">{children}</main></div>;
+  return <div className="flex min-h-screen bg-[#dfe5eb]"><Sidebar activeItem={activeItem}/><main className="min-w-0 flex-1 p-4 pt-20 sm:p-6 sm:pt-24 md:pt-6">{children}</main></div>;
 }
 
 export function ModuleHeader({ title, subtitle, search, onSearch, action }: { title:string; subtitle:string; search:string; onSearch:(value:string)=>void; action?:React.ReactNode }) {
-  return <div className="mb-8 flex flex-wrap items-end justify-between gap-5"><div><h1 className="text-5xl font-bold text-[#0a496a]">{title}</h1><p className="mt-1 text-lg text-[#295c7f]">{subtitle}</p><input value={search} onChange={e=>onSearch(e.target.value)} placeholder="Buscar..." className="mt-4 w-full max-w-xl rounded-xl border-0 bg-white px-5 py-4 shadow outline-none"/></div>{action}</div>;
+  return (
+    <div className="mb-6 flex flex-col justify-between gap-4 md:mb-8 md:flex-row md:items-end md:gap-5">
+      <div className="min-w-0">
+        <h1 className="text-3xl font-bold text-[#0a496a] sm:text-4xl md:text-5xl">{title}</h1>
+        <p className="mt-1 text-base text-[#295c7f] md:text-lg">{subtitle}</p>
+        <input value={search} onChange={e=>onSearch(e.target.value)} placeholder="Buscar..." className="mt-4 w-full max-w-xl rounded-xl border-0 bg-white px-5 py-4 shadow outline-none"/>
+      </div>
+      {action && <div className="shrink-0">{action}</div>}
+    </div>
+  );
 }
 
 export function EmptyState({ loading, error, empty }: {loading:boolean;error:string;empty:boolean}) {

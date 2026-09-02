@@ -82,7 +82,7 @@ export default function EventosPage() {
 
   const totalPages = Math.max(1, Math.ceil(count / 20));
 
-  return <div className="flex min-h-screen bg-[#eef2f7]"><Sidebar activeItem="Eventos" /><main className="flex-1 p-[30px]">
+  return <div className="flex min-h-screen bg-[#eef2f7]"><Sidebar activeItem="Eventos" /><main className="min-w-0 flex-1 p-4 pt-20 sm:p-6 sm:pt-24 md:p-[30px] md:pt-6">
     <div className="mb-8 flex flex-wrap items-center justify-between gap-5">
       <div>
         <h1 className="m-0 text-[52px] leading-tight text-[#124b70]">Eventos y Proyectos</h1>
